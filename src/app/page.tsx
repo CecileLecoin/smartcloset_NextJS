@@ -55,6 +55,15 @@ export default function Home() {
     });
   }
 
+  function deleteFromHistory(idx: number) {
+    setHistory(prev => {
+      const next = [...prev];
+      next.splice(idx, 1);
+      try { localStorage.setItem('fitlab_history', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
   function goToTryOn() { setAutoTry(true); setTab('tryon'); }
 
   // Loading state
@@ -87,7 +96,7 @@ export default function Home() {
         {tab === 'tryon' && (
           <TryOnScreen outfit={outfit} onRemove={removeFromOutfit} onResult={addToHistory} onAddMore={() => setTab('wardrobe')} gender={gender} autoTry={autoTry} />
         )}
-        {tab === 'history' && <HistoryScreen history={history} />}
+        {tab === 'history' && <HistoryScreen history={history} onDelete={deleteFromHistory} />}
         {tab === 'profile' && <ProfileScreen gender={gender} onGenderChange={setGender} />}
       </main>
 

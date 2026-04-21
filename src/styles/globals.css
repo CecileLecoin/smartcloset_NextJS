@@ -9,6 +9,26 @@
     @apply bg-bg text-dark font-sans antialiased;
   }
 
+  /* Dark mode */
+  html.dark {
+    --bg: #0F0F14;
+    --card: #1A1A24;
+    --border: #2A2A38;
+    --dim: #6B6B80;
+    --dark: #F0ECF5;
+  }
+  html.dark body {
+    @apply bg-[#0F0F14] text-[#F0ECF5];
+  }
+  html.dark .bg-bg { background-color: #0F0F14; }
+  html.dark .bg-card { background-color: #1A1A24; }
+  html.dark .border-border { border-color: #2A2A38; }
+  html.dark .text-dark { color: #F0ECF5; }
+  html.dark .text-dim { color: #6B6B80; }
+  html.dark .bg-border { background-color: #2A2A38; }
+  html.dark .shadow-card { box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+  html.dark .shadow-elevated { box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+
   /* Hide scrollbar on mobile for horizontal scroll */
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
