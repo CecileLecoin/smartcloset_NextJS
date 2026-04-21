@@ -1,25 +1,47 @@
-## AWS Amplify Next.js (App Router) Starter Template
+# FitLab — Frontend Next.js
 
-This repository provides a starter template for creating applications using Next.js (App Router) and AWS Amplify, emphasizing easy setup for authentication, API, and database capabilities.
+PWA mobile-first pour l'essayage virtuel.
+ 
+## Setup
 
-## Overview
+```bash
+# 1. Installer Node.js 20+ : https://nodejs.org
+# 2. Installer pnpm
+npm install -g pnpm
 
-This template equips you with a foundational Next.js application integrated with AWS Amplify, streamlined for scalability and performance. It is ideal for developers looking to jumpstart their project with pre-configured AWS services like Cognito, AppSync, and DynamoDB.
+# 3. Installer les dépendances
+pnpm install
 
-## Features
+# 4. Configurer l'API backend
+cp .env.example .env.local
+# Éditer .env.local si le backend tourne ailleurs que localhost:8000
 
-- **Authentication**: Setup with Amazon Cognito for secure user authentication.
-- **API**: Ready-to-use GraphQL endpoint with AWS AppSync.
-- **Database**: Real-time database powered by Amazon DynamoDB.
+# 5. Lancer
+pnpm dev
+```
 
-## Deploying to AWS
+Ouvrir http://localhost:3000
 
-For detailed instructions on deploying your application, refer to the [deployment section](https://docs.amplify.aws/nextjs/start/quickstart/nextjs-app-router-client-components/#deploy-a-fullstack-app-to-aws) of our documentation.
+## Architecture
 
-## Security
+```
+src/
+├── app/
+│   ├── layout.tsx       ← Root layout (fonts, meta, PWA)
+│   └── page.tsx         ← App principale (navigation 4 onglets)
+├── components/
+│   ├── WardrobeScreen   ← Garde-robe + filtres + météo + affiliés
+│   ├── TryOnScreen      ← Compose tenue + essayage FASHN
+│   ├── HistoryScreen    ← Historique des essayages
+│   └── ProfileScreen    ← Profil + préférences
+├── lib/
+│   ├── api.ts           ← Fetch centralisé vers le backend
+│   └── types.ts         ← TypeScript types
+└── styles/
+    └── globals.css      ← Tailwind + design system FitLab
+```
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+## Backend
 
-## License
-
-This library is licensed under the MIT-0 License. See the LICENSE file.
+Le backend Python (FastAPI) tourne séparément.
+Les appels API sont proxied via `next.config.js` rewrites.

@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@layer base {
+  body {
+    @apply bg-bg text-dark font-sans antialiased;
+  }
+
+  /* Hide scrollbar on mobile for horizontal scroll */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@layer components {
+  /* Primary gradient button */
+  .btn-primary {
+    @apply w-full py-3.5 px-6 rounded-lg font-bold text-sm text-white
+           flex items-center justify-center gap-2
+           transition-all duration-150 active:scale-95;
+    background: linear-gradient(135deg, #FF6B8A, #7C5CFC);
+    box-shadow: 0 6px 18px rgba(255, 107, 138, 0.3);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(255, 107, 138, 0.4);
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply w-full py-3 px-6 rounded-lg font-semibold text-sm text-dark
+           bg-card border border-border
+           flex items-center justify-center gap-2
+           transition-all duration-150 active:scale-95;
+  }
+
+  /* Card base */
+  .card {
+    @apply bg-card rounded-xl shadow-card overflow-hidden relative;
+  }
+
+  /* Chip / tag */
+  .chip {
+    @apply px-3.5 py-1.5 rounded-full text-xs font-semibold
+           bg-card border border-border text-dim
+           whitespace-nowrap flex-shrink-0
+           transition-all duration-150 cursor-pointer;
+  }
+  .chip.active {
+    @apply bg-primary border-primary text-white;
+  }
+
+  /* Season chip variant */
+  .season-chip {
+    @apply px-3 py-1.5 rounded-lg text-[10px] font-semibold
+           bg-card border-[1.5px] border-border text-dim
+           whitespace-nowrap flex-shrink-0 flex items-center gap-1
+           transition-all duration-150 cursor-pointer;
+  }
+  .season-chip.active {
+    @apply border-secondary text-secondary;
+    background: rgba(124, 92, 252, 0.08);
+  }
+
+  /* Affiliate badge */
+  .badge-affiliate {
+    @apply absolute top-1.5 right-1.5 w-5 h-5 rounded-full
+           bg-affiliate flex items-center justify-center
+           text-[9px] shadow-sm;
+  }
+
+  /* FAB */
+  .fab {
+    @apply fixed bottom-24 right-5 w-14 h-14 rounded-full
+           text-white text-2xl font-light
+           flex items-center justify-center
+           shadow-glow z-50
+           transition-all duration-200 active:scale-90;
+    background: linear-gradient(135deg, #FF6B8A, #7C5CFC);
+  }
+}

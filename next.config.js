@@ -1,4 +1,23 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-module.exports = nextConfig
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost', port: '8000' },
+      { protocol: 'https', hostname: '**' },
+    ],
+  },
+  async rewrites() {
+    return [
+      // API calls
+      { source: '/api/:path*', destination: `${BACKEND}/api/:path*` },
+      // Static files served by the Python backend
+      { source: '/uploads/:path*', destination: `${BACKEND}/uploads/:path*` },
+      { source: '/outputs_3d/:path*', destination: `${BACKEND}/outputs_3d/:path*` },
+      { source: '/static/models/:path*', destination: `${BACKEND}/static/models/:path*` },
+    ];
+  },
+};
+
+module.exports = nextConfig;
