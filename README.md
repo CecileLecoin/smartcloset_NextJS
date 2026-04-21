@@ -20,7 +20,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Ouvrir http://localhost:3000
+Ouvrir http://http://13.49.73.95:8000
 
 ## Architecture
 
