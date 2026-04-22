@@ -185,21 +185,41 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
         </div>
       )}
 
-      {/* Affiliate buy banner placeholder */}
-      <div className="mx-5 mt-4 mb-6 p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all border border-affiliate"
-           style={{ background: 'linear-gradient(135deg, #FFF9E6, #FFF5F7)' }}>
-        <div className="w-10 h-14 rounded-lg overflow-hidden bg-border flex-shrink-0">
-          <div className="w-full h-full" style={{ background: 'linear-gradient(var(--secondary-soft), var(--primary-soft))' }} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[9px] font-bold uppercase tracking-wide text-dim">Shein</p>
-          <p className="text-xs font-semibold truncate">Blazer beige oversize</p>
-        </div>
-        <p className="text-sm font-extrabold text-primary flex-shrink-0">29,99€</p>
-        <button className="px-3 py-1.5 bg-dark text-white text-[11px] font-bold rounded-full flex-shrink-0">
-          Voir →
-        </button>
-      </div>
+      {/* Affiliate buy banners — show for each affiliate item in outfit */}
+      {outfit.filter(o => (o as any).affiliate?.is_affiliate).map(item => {
+        const aff = (item as any).affiliate || {};
+        const brandNames: Record<string, string> = { shein:'SHEIN', zara:'ZARA', hm:'H&M', uniqlo:'UNIQLO', asos:'ASOS', amazon:'Amazon' };
+        return (
+          <a
+            key={item.id}
+            href={aff.affiliate_url || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mx-5 mt-3 p-3 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] border border-affiliate no-underline"
+            style={{ background: 'linear-gradient(135deg, #FFF9E6, #FFF5F7)' }}
+          >
+            <img src={item.file_path} alt="" className="w-10 h-14 rounded-lg object-cover object-top flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] font-bold uppercase tracking-wide text-dim">
+                {brandNames[aff.affiliate_brand] || aff.affiliate_brand || 'Marque'}
+              </p>
+              <p className="text-xs font-semibold truncate text-dark">
+                {aff.product_name || item.analysis?.type || 'Produit'}
+              </p>
+            </div>
+            {aff.affiliate_price > 0 && (
+              <p className="text-sm font-extrabold text-primary flex-shrink-0">
+                {aff.affiliate_price.toFixed(2)}€
+              </p>
+            )}
+            <span className="px-3 py-1.5 bg-dark text-white text-[11px] font-bold rounded-full flex-shrink-0">
+              Acheter →
+            </span>
+          </a>
+        );
+      })}
+
+      <div className="h-6" />
     </div>
   );
 }

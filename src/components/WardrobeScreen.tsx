@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, SlidersHorizontal, Check, CloudSun } from 'lucide-react';
+import { Search, SlidersHorizontal, Check, CloudSun, ShoppingBag } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import GarmentDetail from '@/components/GarmentDetail';
+import ImportProduct from '@/components/ImportProduct';
 import type { WardrobeItem, OutfitItem } from '@/lib/types';
 
 const CATEGORY_CHIPS = [
@@ -52,6 +53,7 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(false);
   const [detailItem, setDetailItem] = useState<WardrobeItem | null>(null);
+  const [showImport, setShowImport] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadWardrobe = useCallback(async () => {
@@ -135,8 +137,9 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
               className="w-full pl-9 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm outline-none focus:border-secondary transition-colors"
             />
           </div>
-          <button className="w-11 h-11 bg-card border border-border rounded-xl flex items-center justify-center text-dim">
-            <SlidersHorizontal size={16} />
+          <button className="w-11 h-11 bg-card border border-border rounded-xl flex items-center justify-center text-dim"
+            onClick={() => setShowImport(true)} title="Importer un produit">
+            <ShoppingBag size={16} />
           </button>
         </div>
 
@@ -260,6 +263,9 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
                     <Check size={12} className="text-white" strokeWidth={3} />
                   </div>
                 )}
+                {(item as any).affiliate?.is_affiliate && (
+                  <div className="badge-affiliate">✦</div>
+                )}
               </button>
             );
           })}
@@ -333,6 +339,14 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
           item={detailItem}
           onClose={() => setDetailItem(null)}
           onUpdated={() => { setDetailItem(null); loadWardrobe(); }}
+        />
+      )}
+
+      {/* Import product modal */}
+      {showImport && (
+        <ImportProduct
+          onImported={() => { loadWardrobe(); }}
+          onClose={() => setShowImport(false)}
         />
       )}
     </div>

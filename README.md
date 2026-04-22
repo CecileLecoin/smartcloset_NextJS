@@ -1,7 +1,7 @@
 # FitLab — Frontend Next.js
 
 PWA mobile-first pour l'essayage virtuel.
- 
+
 ## Setup
 
 ```bash
@@ -20,7 +20,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Ouvrir http://http://13.49.73.95:8000
+Ouvrir http://localhost:3000
 
 ## Architecture
 

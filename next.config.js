@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://http://13.49.73.95:8000';
- 
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 const nextConfig = {
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'https://api.smartcloset.cloud'},
+      { protocol: 'http', hostname: 'localhost', port: '8000' },
       { protocol: 'https', hostname: '**' },
     ],
   },

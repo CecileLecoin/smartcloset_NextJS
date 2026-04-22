@@ -1,19 +1,32 @@
+import { supabase } from './supabase';
+
 const API = process.env.NEXT_PUBLIC_API_URL || '';
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.access_token) {
+      return { Authorization: `Bearer ${data.session.access_token}` };
+    }
+  } catch {}
+  return {};
+}
 
 export async function apiFetch<T = any>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
+  const authHeaders = await getAuthHeaders();
   let res: Response;
   try {
     res = await fetch(`${API}${path}`, {
       ...options,
       headers: {
+        ...authHeaders,
         ...options?.headers,
       },
     });
   } catch (e) {
-    // Network error — backend probably not running
     console.warn(`[API] Backend unreachable for ${path}`);
     throw new Error('Backend indisponible — lance le serveur Python sur le port 8000');
   }

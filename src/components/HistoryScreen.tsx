@@ -1,9 +1,11 @@
 'use client';
 
+import { Trash2 } from 'lucide-react';
 import type { TryOnResult } from '@/lib/types';
 
 interface Props {
   history: TryOnResult[];
+  onDelete: (idx: number) => void;
 }
 
 function timeAgo(ts: number): string {
@@ -19,7 +21,7 @@ function timeAgo(ts: number): string {
   return new Date(ts).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
-export default function HistoryScreen({ history }: Props) {
+export default function HistoryScreen({ history, onDelete }: Props) {
   return (
     <div className="h-full overflow-y-auto pb-4">
       <div className="px-5 pt-14 pb-2">
@@ -39,9 +41,9 @@ export default function HistoryScreen({ history }: Props) {
       ) : (
         <div className="grid grid-cols-2 gap-3 px-5">
           {history.map((entry, idx) => (
-            <div key={idx} className="card cursor-pointer active:scale-95 transition-all overflow-hidden">
+            <div key={idx} className="card cursor-pointer active:scale-95 transition-all overflow-hidden relative group">
               <div
-                className="w-full flex items-center justify-center text-3xl"
+                className="w-full flex items-center justify-center text-3xl overflow-hidden"
                 style={{
                   aspectRatio: '9/14',
                   background: 'linear-gradient(135deg, rgba(255,107,138,0.1), rgba(124,92,252,0.08))',
@@ -53,6 +55,15 @@ export default function HistoryScreen({ history }: Props) {
                   <span className="opacity-40">👗</span>
                 )}
               </div>
+
+              {/* Delete button — visible on hover/touch */}
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(idx); }}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+              >
+                <Trash2 size={12} className="text-white" />
+              </button>
+
               <div className="p-3">
                 <p className="text-[11px] font-semibold truncate">{entry.fullLabel || entry.label}</p>
                 <p className="text-[10px] text-dim mt-0.5">{timeAgo(entry.ts)}</p>
@@ -65,7 +76,7 @@ export default function HistoryScreen({ history }: Props) {
                   {entry.hasAffiliate && (
                     <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold"
                           style={{ background: 'rgba(255,229,102,0.2)', color: '#B8960A' }}>
-                      ✦ Shein
+                      ✦ Affilié
                     </span>
                   )}
                 </div>
