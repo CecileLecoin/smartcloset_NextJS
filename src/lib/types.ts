@@ -9,6 +9,7 @@ export interface GarmentAnalysis {
   fit: string;
   details: string[];
   season: string;
+  weather_tags: string[];
   style_description: string;
   confidence: number;
 }

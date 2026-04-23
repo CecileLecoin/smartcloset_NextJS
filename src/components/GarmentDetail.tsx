@@ -20,15 +20,49 @@ const CATEGORIES = [
   { value: 'accessoire', label: '🧣 Accessoire' },
 ];
 
+const SEASONS = [
+  { value: 'spring', label: '🌸 Printemps' },
+  { value: 'summer', label: '☀️ Été' },
+  { value: 'autumn', label: '🍂 Automne' },
+  { value: 'winter', label: '❄️ Hiver' },
+];
+
+const WEATHER_OPTIONS = [
+  { value: 'hot', label: '🔥 Chaud' },
+  { value: 'warm', label: '🌤 Tempéré' },
+  { value: 'cold', label: '❄️ Froid' },
+  { value: 'rain', label: '🌧 Pluie' },
+  { value: 'wind', label: '💨 Vent' },
+  { value: 'snow', label: '🌨 Neige' },
+];
+
 export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
   const a = (item.analysis || {}) as GarmentAnalysis;
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // États pour l’édition manuelle de l’analyse
+  // Saison & météo
+  const [season, setSeason] = useState(a.season || '');
+  const [weatherTags, setWeatherTags] = useState<string[]>(
+    a.weather_tags || []
+  );
+  const [type, setType] = useState(a.type || '');
+  const [category, setCategory] = useState(a.category || '');
+  const [style, setStyle] = useState(a.style || '');
+  const [fit, setFit] = useState(a.fit || '');
+  const [pattern, setPattern] = useState(a.pattern || '');
+  const [fabric, setFabric] = useState(a.fabric_texture || '');
+  const [primaryColor, setPrimaryColor] = useState(a.primary_color || '');
+  const [colors, setColors] = useState((a.colors || []).join(', '));
+
   async function handleSave() {
     setSaving(true);
     try {
       const fd = new FormData();
+      if (season) fd.append('season', season);
+      if (weatherTags.length > 0)
+        fd.append('weather_tags', JSON.stringify(weatherTags));
       await apiFetch(`/api/wardrobe/${item.id}`, { method: 'PATCH', body: fd });
       onUpdated();
       setEditing(false);
@@ -117,6 +151,149 @@ export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
 
           {/* Mode édition */}
           {editing && (
+            <div className="space-y-3 text-xs">
+              {/* Type */}
+              <div>
+                <label className="block mb-1 font-semibold text-dim">Type</label>
+                <input
+                  value={type}
+                  onChange={e => setType(e.target.value)}
+                  className="w-full px-3 py-2 bg-bg border border-border rounded-lg outline-none focus:border-secondary"
+                  placeholder="ex: t-shirt, pantalon, robe…"
+                />
+              </div>
+
+              {/* Catégorie */}
+              <div>
+                <label className="block mb-1 font-semibold text-dim">Catégorie</label>
+                <select
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                  className="w-full px-3 py-2 bg-bg border border-border rounded-lg outline-none focus:border-secondary"
+                >
+                  <option value="">— Choisir —</option>
+                  {CATEGORIES.map(c => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Style */}
+              <div>
+                <label className="block mb-1 font-semibold text-dim">Style</label>
+                <input
+                  value={style}
+                  onChange={e => setStyle(e.target.value)}
+                  className="w-full px-3 py-2 bg-bg border border-border rounded-lg outline-none focus:border-secondary"
+                  placeholder="ex: casual, chic, sport…"
+                />
+              </div>
+
+              {/* Coupe */}
+              <div>
+                <label className="block mb-1 font-semibold text-dim">Coupe</label>
+                <input
+                  value={fit}
+                  onChange={e => setFit(e.target.value)}
+                  className="w-full px-3 py-2 bg-bg border border-border rounded-lg outline-none focus:border-secondary"
+                  placeholder="ex: ajustée, ample…"
+                />
+              </div>
+
+              {/* Motif */}
+              <div>
+                <label className="block mb-1 font-semibold text-dim">Motif</label>
+                <input
+                  value={pattern}
+                  onChange={e => setPattern(e.target.value)}
+                  className="w-full px-3 py-2 bg-bg border border-border rounded-lg outline-none focus:border-secondary"
+                  placeholder="ex: uni, rayé, fleuri…"
+                />
+              </div>
+
+              {/* Couleur principale */}
+              <div>
+                <label className="block mb-1 font-semibold text-dim">
+                  Couleur principale (anglais)
+                </label>
+                <input
+                  value={primaryColor}
+                  onChange={e => setPrimaryColor(e.target.value)}
+                  className="w-full px-3 py-2 bg-bg border border-border rounded-lg outline-none focus:border-secondary"
+                  placeholder="ex: navy blue"
+                />
+              </div>
+
+              {/* Couleurs secondaires */}
+              <div>
+                <label className="block mb-1 font-semibold text-dim">
+                  Couleurs (séparées par des virgules)
+                </label>
+                <input
+                  value={colors}
+                  onChange={e => setColors(e.target.value)}
+                  className="w-full px-3 py-2 bg-bg border border-border rounded-lg outline-none focus:border-secondary"
+                  placeholder="ex: noir, blanc, rouge"
+                />
+              </div>
+            
+            {/* Saison */}
+            <div>
+              <label className="block mb-1 font-semibold text-dim">
+                Saison principale
+              </label>
+              <select
+                value={season}
+                onChange={e => setSeason(e.target.value)}
+                className="w-full px-3 py-2 bg-bg border border-border rounded-lg outline-none focus:border-secondary"
+              >
+                <option value="">— Choisir —</option>
+                {SEASONS.map(s => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Météo */}
+            <div>
+              <label className="block mb-2 font-semibold text-dim">
+                Conditions météo adaptées
+              </label>
+
+              <div className="flex flex-wrap gap-2">
+                {WEATHER_OPTIONS.map(w => {
+                  const checked = weatherTags.includes(w.value);
+
+                  return (
+                    <button
+                      key={w.value}
+                      type="button"
+                      onClick={() =>
+                        setWeatherTags(prev =>
+                          checked
+                            ? prev.filter(x => x !== w.value)
+                            : [...prev, w.value]
+                        )
+                      }
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition
+                        ${
+                          checked
+                            ? 'bg-secondary text-white border-secondary'
+                            : 'bg-bg border-border text-dim'
+                        }`}
+                    >
+                      {w.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          )}
             <div className="flex gap-3">
               <button
                 onClick={() => setEditing(false)}
@@ -133,7 +310,7 @@ export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
                 {saving ? 'Enregistrement…' : '✅ Enregistrer'}
               </button>
             </div>
-          )}
+          
         </div>
       </div>
     </>
