@@ -27,6 +27,15 @@ module.exports = {
         elevated: '0 4px 20px rgba(0,0,0,0.08)',
         glow: '0 6px 24px rgba(255,107,138,0.35)',
       },
+      animation: {
+        'bounce-soft': 'bounceSoft 1.2s ease-in-out infinite alternate',
+      },
+      keyframes: {
+        bounceSoft: {
+          from: { transform: 'translateY(0)' },
+          to:   { transform: 'translateY(-6px)' },
+        },
+      },
     },
   },
   plugins: [],
