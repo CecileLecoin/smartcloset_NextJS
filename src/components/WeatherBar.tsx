@@ -1,5 +1,66 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
+interface WeatherData {
+  temp: number;
+  city: string;
+  tag: 'hot' | 'warm' | 'cold' | 'rain' | 'snow';
+}
+
+export default function WeatherBar({
+  onFilterByWeather,
+  onWeatherChange,
+}: {
+  onFilterByWeather?: (tag: string) => void;
+  onWeatherChange?: (tag: 'hot' | 'warm' | 'cold' | 'rain' | 'snow') => void;
+}) {
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+
+  useEffect(() => {
+    fetch('/api/weather')
+      .then(res => res.json())
+      .then(setWeather)
+      .catch(console.error);
+  }, []);
+
+  if (!weather) return null;
+  
+      // ✅ C’EST CETTE LIGNE QUI MANQUAIT
+      onWeatherChange?.(weather.tag);
+
+
+  return (
+    <div
+      onClick={() => {
+        onFilterByWeather?.(weather.tag);
+        onWeatherChange?.(weather.tag);
+      }}
+      className="mx-5 mb-2 p-3 rounded-xl flex items-center gap-3 cursor-pointer"
+      style={{
+        background: 'linear-gradient(135deg, #E8F4FD, #F0E8FF)',
+        border: '1px solid rgba(124,92,252,0.1)',
+      }}
+    >
+      <div>
+        <p className="font-bold text-sm">
+          {weather.temp}° — {weather.city}
+        </p>
+        <p className="text-xs text-dim">
+          Conditions actuelles
+        </p>
+      </div>
+
+      <span className="ml-auto text-xs font-semibold">
+        {weather.tag}
+      </span>
+    </div>
+  );
+}
+
+
+/*'use client';
+
 import { CloudSun, Cloud, Sun, CloudRain, Snowflake, CloudLightning } from 'lucide-react';
 
 interface WeatherData {
@@ -57,4 +118,4 @@ export default function WeatherBar({ onFilterByWeather }: Props) {
       </span>
     </button>
   );
-}
+}*/

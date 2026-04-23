@@ -48,7 +48,7 @@ export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
   // Saison & météo
   const [season, setSeason] = useState<SeasonFilter>('all');
   const [weatherTags, setWeatherTags] = useState<string[]>(
-    a.weather_tags || []
+    Array.isArray(a.weather_tags) ? a.weather_tags : (typeof a.weather_tags === 'string' ? a.weather_tags.split(',').map(t => t.trim()).filter(Boolean) : [])
   );
 
   //favoris

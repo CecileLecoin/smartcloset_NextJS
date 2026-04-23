@@ -9,7 +9,7 @@ export interface GarmentAnalysis {
   fit: string;
   details: string[];
   season: 'spring' | 'summer' | 'autumn' | 'winter' | 'all';
-  weather_tags: string[];
+  weather_tags: string[] | string;
   style_description: string;
   confidence: number;
 }

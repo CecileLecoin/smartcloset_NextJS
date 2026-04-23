@@ -13,7 +13,7 @@ export const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 export async function getUserId(): Promise<string | null> {
   const { data } = await supabase.auth.getSession()
   const accessToken = data.session?.access_token
-  console.log('Access token:', accessToken);
+  //console.log('Access token:', accessToken);
   return accessToken || null;
 }
 

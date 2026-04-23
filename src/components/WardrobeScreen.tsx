@@ -6,9 +6,13 @@ import { apiFetch } from '@/lib/api';
 import GarmentDetail from '@/components/GarmentDetail';
 import ImportProduct from '@/components/ImportProduct';
 import type { WardrobeItem, OutfitItem, GarmentAnalysis } from '@/lib/types';
+import WeatherBar from './WeatherBar';
+import GarmentCard from './GarmentCard';
 
 type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 type SeasonFilter = Season | 'all';
+
+type GarmentCategory = 'haut' | 'bas' | 'veste' | 'robe' | 'accessoire';
 
 const CATEGORY_CHIPS = [
   { key: 'all', label: 'Tous', emoji: '' },
@@ -49,7 +53,7 @@ interface Props {
   onGoTryOn: () => void;
 }
 
-function getCat(item: WardrobeItem): string {
+function getCat(item: WardrobeItem):  GarmentCategory {
   const s = ((item.analysis?.category || '') + ' ' + (item.analysis?.type || '')).toLowerCase();
   if (/bas|jean|pant|short|jupe|skirt|legging/.test(s)) return 'bas';
   if (/robe|dress|combi|jumpsuit/.test(s)) return 'robe';
@@ -86,7 +90,21 @@ function getWeatherTags(item: WardrobeItem): string[] {
   const tags = new Set<string>();
 
   // 1️⃣ Weather tags explicites (BDD)
-  (item.analysis?.weather_tags || []).forEach(t => tags.add(t));
+  const rawWeather = item.analysis?.weather_tags;
+
+  // ✅ Cas 1 : tableau correct
+  if (Array.isArray(rawWeather)) {
+    rawWeather.forEach(t => tags.add(t));
+  }
+
+  // ✅ Cas 2 : string "rain,cold"
+  else if (typeof rawWeather === 'string') {
+    rawWeather
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean)
+      .forEach(t => tags.add(t));
+  }
 
   // 2️⃣ Analyse textuelle fallback
   const s = (
@@ -153,14 +171,7 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
     }
   }
 
-  console.log(
-    items.map(item => ({
-      id: item.id,
-      season: item.analysis?.season,
-      weather: item.analysis?.weather_tags,
-      guessedSeason: getSeasons(item),
-    }))
-  );
+  
 
   const filtered = items.filter(item => {
   // 1️⃣ Catégorie
@@ -199,6 +210,125 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
 
   return true;
 });
+
+// Outifit of the day suggestion (simplified heuristic)
+//La tenue du jour (score en fct de la météo + des facvoris)
+function getCurrentSeason(): Season {
+  const month = new Date().getMonth(); // 0 = janvier
+
+  if (month >= 2 && month <= 4) return 'spring';
+  if (month >= 5 && month <= 7) return 'summer';
+  if (month >= 8 && month <= 10) return 'autumn';
+  return 'winter';
+}
+const seasonForOutfit = getCurrentSeason();
+const [outfitOfTheDay, setOutfitOfTheDay] = useState<WardrobeItem[]>([]);
+const [weatherTag, setWeatherTag] = useState<
+  'hot' | 'warm' | 'cold' | 'rain' | 'snow' | null
+>(null);
+//const [thisSeason, setThisSeason] = useState<Season | null>(null);
+
+useEffect(() => {
+  // Sécurité : on attend que tout soit prêt
+  console.log('useEffect for outfitOfTheDay', { items, weatherTag, seasonForOutfit });
+  if (!items || items.length === 0) return;
+  if (!weatherTag) return;
+  if (!seasonForOutfit) return;
+
+  console.log('🔥 Calling bestOutfitOfTheDay');
+
+  const todayOutfit = bestOutfitToday(
+    items,
+    weatherTag,
+    seasonForOutfit
+  );
+
+  console.log('✅ Outfit computed:', todayOutfit);
+
+  setOutfitOfTheDay(todayOutfit);
+}, [items, weatherTag, seasonForOutfit]);
+
+function scoreGarment(
+  item: WardrobeItem,
+  weatherTag: 'hot' | 'warm' | 'cold' | 'rain' | 'snow',
+  currentSeason: 'spring' | 'summer' | 'autumn' | 'winter'
+): number {
+  let score = 0;
+
+  // ⭐ Favori
+  if (item.favorite) score += 30;
+
+  // 🌦 Météo
+  const weatherTags = getWeatherTags(item);
+  if (weatherTags.includes(weatherTag)) score += 25;
+
+  // 🍂 Saison
+  if (getSeasons(item).includes(currentSeason)) score += 20;
+
+  // 🧵 Matière (fallback intelligent)
+  const fabric = (item.analysis?.fabric_texture || '').toLowerCase();
+  if (
+    weatherTag === 'cold' &&
+    /laine|wool|doudoune|pull/.test(fabric)
+  ) score += 10;
+
+  if (
+    weatherTag === 'hot' &&
+    /lin|coton|cotton|light/.test(fabric)
+  ) score += 10;
+
+  return score;
+}
+function bestOutfitToday(
+  items: WardrobeItem[],
+  weatherTag: 'hot' | 'warm' | 'cold' | 'rain' | 'snow',
+  season: Season
+): WardrobeItem[] {
+  console.log('🔥 bestOutfitToday CALLED');
+
+  const byCat: Record<
+    GarmentCategory,
+    { item: WardrobeItem; score: number }[]
+  > = {
+    haut: [],
+    bas: [],
+    robe: [],
+    veste: [],
+    accessoire: [],
+  };
+
+  items.forEach(item => {
+    const cat = getCat(item);
+    const score = scoreGarment(item, weatherTag, season);
+    byCat[cat].push({ item, score });
+  });
+
+  Object.values(byCat).forEach(arr =>
+    arr.sort((a, b) => b.score - a.score)
+  );
+
+  // Priorité robe
+  if (byCat.robe[0]) {
+    return [byCat.robe[0].item];
+  }
+
+  const outfit: WardrobeItem[] = [];
+
+  if (byCat.haut[0]) outfitOfTheDay.push(byCat.haut[0].item);
+  if (byCat.bas[0]) outfitOfTheDay.push(byCat.bas[0].item);
+
+  if (
+    ['cold', 'rain', 'snow'].includes(weatherTag) &&
+    byCat.veste[0]
+  ) {
+    outfitOfTheDay.push(byCat.veste[0].item);
+  }
+
+  console.log('✅ Outfit of the day candidates:', outfitOfTheDay);
+  return outfitOfTheDay;
+}
+
+
     /*if (search) {
       const hay = [
         item.analysis?.type, item.analysis?.style, item.analysis?.fit,
@@ -266,16 +396,30 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
         </div>
       </div>
 
+      
       {/* Weather bar */}
-      <div className="mx-5 mb-2 p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all"
-           style={{ background: 'linear-gradient(135deg, #E8F4FD, #F0E8FF)', border: '1px solid rgba(124,92,252,0.1)' }}>
-        <CloudSun size={28} className="text-secondary" />
-        <div className="flex-1">
-          <p className="text-sm font-bold">16° — Paris</p>
-          <p className="text-[10px] text-dim">Quelques nuages, pas de pluie</p>
-        </div>
-        <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-secondary/10 text-secondary">Mi-saison</span>
-      </div>
+      <WeatherBar onFilterByWeather={setSelectedWeather} onWeatherChange={setWeatherTag}/>
+
+      {/* Tenue du jour */}
+      {outfitOfTheDay.length > 0 && (
+        <section className="mx-5 mb-6 p-4 rounded-2xl bg-secondary/5 border border-secondary/15">
+          <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+            👗 Tenue idéale aujourd’hui
+          </h3>
+
+          <p className="text-xs text-dim mb-3">
+            Basée sur la météo et tes favoris
+          </p>
+
+          <div className="flex gap-3 overflow-x-auto no-scrollbar">
+            {outfitOfTheDay.map(item => (
+              <div key={item.id} className="shrink-0 w-[110px]">
+                <GarmentCard item={item} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Season chips */}
         <p className="text-[9px] font-bold uppercase tracking-widest text-dim px-5 mb-1.5">

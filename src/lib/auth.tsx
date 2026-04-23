@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(data.session)
           setUser(data.session?.user ?? null)
           setLoading(false)
-          console.log('Access token:', data.session?.access_token)
+          //console.log('Access token:', data.session?.access_token)
         }
 
         loadSession()
