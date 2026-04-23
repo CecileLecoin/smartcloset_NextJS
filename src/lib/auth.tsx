@@ -25,13 +25,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  //useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    /*supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user || null);
       setLoading(false);
-    });
+      console.log('Access token:', session?.access_token);
+      });*/
+      
+      useEffect(() => {
+        const loadSession = async () => {
+          const { data, error } = await supabase.auth.getSession()
+
+          if (error) {
+            console.error('getSession error', error)
+            return
+          }
+
+          setSession(data.session)
+          setUser(data.session?.user ?? null)
+          setLoading(false)
+          console.log('Access token:', data.session?.access_token)
+        }
+
+        loadSession()
+    
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

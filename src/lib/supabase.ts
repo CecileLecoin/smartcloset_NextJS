@@ -11,8 +11,10 @@ export const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 
 // ── Helper: get current user ID ──────────────────────────────
 export async function getUserId(): Promise<string | null> {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id || null;
+  const { data } = await supabase.auth.getSession()
+  const accessToken = data.session?.access_token
+  console.log('Access token:', accessToken);
+  return accessToken || null;
 }
 
 // ── Helper: get public URL for a storage file ────────────────
