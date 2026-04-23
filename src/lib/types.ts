@@ -22,6 +22,7 @@ export interface WardrobeItem {
   added_at: string;
   renders: { key: string; render_url: string }[];
   meshes: Record<string, string>;
+  favorite?: boolean;
 }
 
 export interface OutfitItem {

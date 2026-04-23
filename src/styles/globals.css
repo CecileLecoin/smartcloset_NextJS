@@ -104,6 +104,18 @@
   @apply bg-secondary text-white border-secondary;
 }
 
+
+.favorite-pop {
+  animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+
   /* Affiliate badge */
   .badge-affiliate {
     @apply absolute top-1.5 right-1.5 w-5 h-5 rounded-full

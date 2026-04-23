@@ -36,6 +36,9 @@ const WEATHER_OPTIONS = [
   { value: 'snow', label: '🌨 Neige' },
 ];
 
+type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+type SeasonFilter = Season | 'all';
+
 export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
   const a = (item.analysis || {}) as GarmentAnalysis;
   const [editing, setEditing] = useState(false);
@@ -43,10 +46,16 @@ export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
 
   // États pour l’édition manuelle de l’analyse
   // Saison & météo
-  const [season, setSeason] = useState(a.season || '');
+  const [season, setSeason] = useState<SeasonFilter>('all');
   const [weatherTags, setWeatherTags] = useState<string[]>(
     a.weather_tags || []
   );
+
+  //favoris
+  const [favorite, setFavorite] = useState<boolean>(
+    Boolean(item.favorite)
+  );
+
   const [type, setType] = useState(a.type || '');
   const [category, setCategory] = useState(a.category || '');
   const [style, setStyle] = useState(a.style || '');
@@ -78,6 +87,29 @@ export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
     onClose();
   }
 
+  //favorite toggle
+  async function toggleFavorite() {
+    const next = !favorite;
+    setFavorite(next); // ✅ optimistique (UX fluide)
+
+    try {
+      const fd = new FormData();
+      fd.append('favorite', String(next));
+
+      await apiFetch(`/api/wardrobe/${item.id}`, {
+        method: 'PATCH',
+        body: fd,
+      });
+
+      onUpdated(); // refresh liste si besoin
+    } catch (e) {
+      // rollback si erreur
+      setFavorite(!next);
+      alert("Impossible de modifier le favori");
+    }
+  }
+
+
   return (
     <>
       {/* Backdrop */}
@@ -93,6 +125,19 @@ export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-border" />
         </div>
+
+        {/* Bouton Favori à gauche */}
+            <button
+              onClick={toggleFavorite}
+              className={`p-2 rounded-full transition ${
+                favorite
+                  ? 'text-yellow-500 bg-yellow-500/10'
+                  : 'text-dim hover:bg-bg'
+              }`}
+              title={favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            >
+              {favorite ? '⭐' : '☆'}
+            </button>
 
         {/* Header */}
         <div className="flex items-start gap-3 px-5 pb-3">
@@ -122,9 +167,14 @@ export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
             </div>
           </div>
 
-          <button onClick={onClose} className="p-1 text-dim">
-            <X size={20} />
-          </button>
+          <div className="flex items-center justify-between px-5 pb-3">
+
+            {/* Bouton Fermer à droite */}
+            <button onClick={onClose} className="p-1 text-dim">
+              <X size={20} />
+            </button>
+          </div>
+
         </div>
 
         {/* ACTIONS */}
@@ -244,18 +294,21 @@ export default function GarmentDetail({ item, onClose, onUpdated }: Props) {
               <label className="block mb-1 font-semibold text-dim">
                 Saison principale
               </label>
+              
               <select
                 value={season}
-                onChange={e => setSeason(e.target.value)}
-                className="w-full px-3 py-2 bg-bg border border-border rounded-lg outline-none focus:border-secondary"
+                onChange={e =>
+                  setSeason(e.target.value as SeasonFilter)
+                }
+                className="w-full px-3 py-2 bg-bg border border-border rounded-lg"
               >
-                <option value="">— Choisir —</option>
-                {SEASONS.map(s => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
+                <option value="all">Toutes les saisons</option>
+                <option value="spring">Printemps</option>
+                <option value="summer">Été</option>
+                <option value="autumn">Automne</option>
+                <option value="winter">Hiver</option>
               </select>
+
             </div>
 
             {/* Météo */}
