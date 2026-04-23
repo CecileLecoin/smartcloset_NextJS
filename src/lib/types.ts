@@ -8,7 +8,7 @@ export interface GarmentAnalysis {
   pattern: string;
   fit: string;
   details: string[];
-  season: string;
+  season: 'spring' | 'summer' | 'autumn' | 'winter' | 'all';
   weather_tags: string[];
   style_description: string;
   confidence: number;

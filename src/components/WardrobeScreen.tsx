@@ -5,7 +5,10 @@ import { Search, SlidersHorizontal, Check, CloudSun, ShoppingBag } from 'lucide-
 import { apiFetch } from '@/lib/api';
 import GarmentDetail from '@/components/GarmentDetail';
 import ImportProduct from '@/components/ImportProduct';
-import type { WardrobeItem, OutfitItem } from '@/lib/types';
+import type { WardrobeItem, OutfitItem, GarmentAnalysis } from '@/lib/types';
+
+type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+type SeasonFilter = Season | 'all';
 
 const CATEGORY_CHIPS = [
   { key: 'all', label: 'Tous', emoji: '' },
@@ -16,16 +19,28 @@ const CATEGORY_CHIPS = [
   { key: 'accessoire', label: 'Acc.', emoji: '🧣' },
 ];
 
-const SEASON_CHIPS = [
+
+const SEASON_CHIPS: {
+  key: SeasonFilter;
+  label: string;
+  emoji: string;
+}[] = [
+  { key: 'all', label: 'Toutes', emoji: '🧥' },
+  { key: 'spring', label: 'Printemps', emoji: '🌸' },
+  { key: 'summer', label: 'Été', emoji: '☀️' },
+  { key: 'autumn', label: 'Automne', emoji: '🍂' },
+  { key: 'winter', label: 'Hiver', emoji: '❄️' },
+];
+
+
+const WEATHER_CHIPS = [
   { key: 'all', label: 'Tout', emoji: '🌡️' },
-  { key: 'hiver', label: 'Hiver', emoji: '❄️' },
-  { key: 'printemps', label: 'Printemps', emoji: '🌸' },
-  { key: 'ete', label: 'Été', emoji: '☀️' },
-  { key: 'automne', label: 'Automne', emoji: '🍂' },
-  { key: 'pluie', label: 'Pluie', emoji: '🌧️' },
-  { key: 'froid', label: 'Froid <5°', emoji: '🥶' },
-  { key: 'doux', label: 'Doux 10-20°', emoji: '😌' },
-  { key: 'chaud', label: 'Chaud >25°', emoji: '🔥' },
+  { key: 'rain', label: 'Pluie', emoji: '🌧️' },
+  { key: 'snow', label: 'Neige', emoji: '❄️' },
+  { key: 'wind', label: 'Vent', emoji: '💨' },
+  { key: 'cold', label: 'Froid', emoji: '🥶' },
+  { key: 'hot', label: 'Chaud', emoji: '🔥' },
+  { key: 'warm', label: 'Tempéré', emoji: '😌' },
 ];
 
 interface Props {
@@ -44,12 +59,62 @@ function getCat(item: WardrobeItem): string {
   return 'haut';
 }
 
+function getSeasons(item: WardrobeItem): Array<GarmentAnalysis['season']> {
+  const raw = (item.analysis?.season || '').toLowerCase();
+  const seasons = new Set<GarmentAnalysis['season']>();
+
+  if (/toutes|all/.test(raw)) {
+    return ['spring', 'summer', 'autumn', 'winter'];
+  }
+
+  if (/printemps|spring/.test(raw)) seasons.add('spring');
+  if (/été|ete|summer/.test(raw)) seasons.add('summer');
+  if (/automne|autumn|fall/.test(raw)) seasons.add('autumn');
+  if (/hiver|winter/.test(raw)) seasons.add('winter');
+
+  // fallback (si rien trouvé)
+  if (seasons.size === 0) {
+    // heuristique simple
+    if (/manteau|parka|laine|wool|veste/.test(raw)) seasons.add('winter');
+    if (/short|lin|linen|debardeur|tank/.test(raw)) seasons.add('summer');
+  }
+
+  return Array.from(seasons);
+}
+
+function getWeatherTags(item: WardrobeItem): string[] {
+  const tags = new Set<string>();
+
+  // 1️⃣ Weather tags explicites (BDD)
+  (item.analysis?.weather_tags || []).forEach(t => tags.add(t));
+
+  // 2️⃣ Analyse textuelle fallback
+  const s = (
+    (item.analysis?.style || '') +
+    ' ' +
+    (item.analysis?.fabric_texture || '') +
+    ' ' +
+    (item.analysis?.details || []).join(' ')
+  ).toLowerCase();
+
+  if (/pluie|rain|imperméable|waterproof/.test(s)) tags.add('rain');
+  if (/neige|snow|combinaison|sweater|doudoune|parka/.test(s)) tags.add('snow');
+  if (/vent|wind|coupe-vent/.test(s)) tags.add('wind');
+  if (/froid|cold|laine|wool|doudoune|sweater/.test(s)) tags.add('cold');
+  if (/chaud|hot|été|summer|tank|debardeur|maillot/.test(s)) tags.add('hot');
+  if (/tempéré|mild/.test(s)) tags.add('warm');
+
+  return Array.from(tags);
+}
+
 export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Props) {
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('all');
   const [season, setSeason] = useState('all');
+  const [selectedSeason, setSelectedSeason] = useState<GarmentAnalysis['season'] | null>(null);
+  const [selectedWeather, setSelectedWeather] = useState('all');
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(false);
   const [detailItem, setDetailItem] = useState<WardrobeItem | null>(null);
@@ -88,9 +153,53 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
     }
   }
 
+  console.log(
+    items.map(item => ({
+      id: item.id,
+      season: item.analysis?.season,
+      weather: item.analysis?.weather_tags,
+      guessedSeason: getSeasons(item),
+    }))
+  );
+
   const filtered = items.filter(item => {
-    if (filter !== 'all' && getCat(item) !== filter) return false;
-    if (search) {
+  // 1️⃣ Catégorie
+  if (filter !== 'all' && getCat(item) !== filter) return false;
+
+  // 2️⃣ Saison ✅ NEW
+  if (selectedSeason && selectedSeason !== 'all') {
+    const seasons = getSeasons(item);
+    console.log('Filtering item', item.id, 'seasons:', seasons);
+    if (!seasons.includes(selectedSeason)) return false;
+  }
+
+  // 3️⃣ Météo (si déjà en place)
+  if (selectedWeather && selectedWeather !== 'all') {
+    const weather = getWeatherTags(item);
+    if (!weather.includes(selectedWeather)) return false;
+  }
+
+  // 4️⃣ Recherche texte
+  if (search) {
+    const hay = [
+      getCat(item),
+      ...getSeasons(item),
+      ...(getWeatherTags(item)),
+      item.analysis?.type,
+      item.analysis?.style,
+      item.analysis?.pattern,
+      ...(item.analysis?.colors || []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    if (!hay.includes(search.toLowerCase())) return false;
+  }
+
+  return true;
+});
+    /*if (search) {
       const hay = [
         item.analysis?.type, item.analysis?.style, item.analysis?.fit,
         item.analysis?.pattern, ...(item.analysis?.colors || []),
@@ -99,7 +208,7 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
       if (!hay.includes(search.toLowerCase())) return false;
     }
     return true;
-  });
+  });*/
 
   const counts = { all: items.length, haut: 0, bas: 0, robe: 0, veste: 0, accessoire: 0 };
   items.forEach(i => { const c = getCat(i); if (c in counts) (counts as any)[c]++; });
@@ -169,18 +278,42 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
       </div>
 
       {/* Season chips */}
-      <p className="text-[9px] font-bold uppercase tracking-widest text-dim px-5 mb-1.5">Filtrer par saison / météo</p>
-      <div className="flex gap-1.5 px-5 overflow-x-auto no-scrollbar mb-4">
-        {SEASON_CHIPS.map(c => (
-          <button
-            key={c.key}
-            onClick={() => setSeason(c.key)}
-            className={`season-chip ${season === c.key ? 'active' : ''}`}
-          >
-            {c.emoji} {c.label}
-          </button>
-        ))}
-      </div>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-dim px-5 mb-1.5">
+          Filtrer par saison
+        </p>
+
+        <div className="flex gap-1.5 px-5 overflow-x-auto no-scrollbar mb-4">
+          {SEASON_CHIPS.map(c => (
+            <button
+              key={c.key}
+              onClick={() => setSelectedSeason(c.key)}
+              className={`season-chip ${
+                selectedSeason === c.key ? 'active' : ''
+              }`}
+            >
+              {c.emoji} {c.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Weather chips */}
+          <p className="text-[9px] font-bold uppercase tracking-widest text-dim px-5 mb-1.5">
+            Filtrer par météo
+          </p>
+
+          <div className="flex gap-1.5 px-5 overflow-x-auto no-scrollbar mb-4">
+            {WEATHER_CHIPS.map(c => (
+              <button
+                key={c.key}
+                onClick={() => setSelectedWeather(c.key)}
+                className={`weather-chip ${
+                  selectedWeather === c.key ? 'active' : ''
+                }`}
+              >
+                {c.emoji} {c.label}
+              </button>
+            ))}
+          </div>
 
       {/* My pieces */}
       <div className="flex items-center justify-between px-5 mb-2">
