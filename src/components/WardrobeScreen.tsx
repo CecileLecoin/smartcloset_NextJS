@@ -8,6 +8,7 @@ import GarmentCard from './GarmentCard';
 import GarmentDetail from '@/components/GarmentDetail';
 import ImportProduct from '@/components/ImportProduct';
 import type { WardrobeItem, OutfitItem, GarmentAnalysis, WeatherInfo } from '@/lib/types';
+import { it } from 'node:test';
 
 /* ---------------- TYPES ---------------- */
 
@@ -306,28 +307,6 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
 
 
 
-
-  /* ----------- LOAD OUTFIT OF THE DAY (IA) ----------- */
-
-  useEffect(() => {
-    async function fetchOutfitOfTheDay() {
-      setLoadingOutfit(true);
-      try {
-        const res = await apiFetch<{ outfits: ClaudeOutfit[] }>(
-          '/api/outfit-of-the-day',
-          { method: 'POST' }
-        );
-        setDailyOutfits(res.outfits ?? []);
-        setCurrentOutfitIndex(0);
-      } catch (err) {
-        console.error('Failed to load daily outfit', err);
-      } finally {
-        setLoadingOutfit(false);
-      }
-    }
-
-    fetchOutfitOfTheDay();
-  }, []);
 
   /* ---------------- RENDER ---------------- */
 
@@ -666,8 +645,8 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
       {detailItem && (
         <GarmentDetail
           item={detailItem}
-          onClose={() => setDetailItem(null)}
-          onUpdated={() => { setDetailItem(null); loadWardrobe(); }}
+          onClose={() => setDetailItem(item => item ? null : item)}
+          onUpdated={() => { setDetailItem(detailItem); loadWardrobe(); }}
         />
       )}
 
