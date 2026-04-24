@@ -10,8 +10,16 @@ interface Props {
   onClick?: () => void;
 }
 
+
 export default function GarmentCard({ item, selected, isAffiliate, onClick }: Props) {
   const a = item.analysis;
+  const seasonIcon: Record<string, string> = {
+    spring: '🌸',
+    summer: '☀️',
+    autumn: '🍂',
+    winter: '❄️',
+    all: '🌡️',
+  };
 
   return (
     <button
@@ -60,8 +68,7 @@ export default function GarmentCard({ item, selected, isAffiliate, onClick }: Pr
       {/* Season badge */}
       {a?.season && (
         <div className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-white/80 text-dim backdrop-blur-sm">
-          {a.season === 'printemps-été' ? '☀️' :
-           a.season === 'automne-hiver' ? '❄️' : '🌡️'}
+          {seasonIcon[a.season] ?? '🌡️'}
         </div>
       )}
     </button>
