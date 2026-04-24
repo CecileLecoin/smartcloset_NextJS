@@ -70,19 +70,38 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
       setSaved(false);
 
       const label = outfit.map(o => o.analysis?.type || 'vêtement').join(' + ');
-      onResult({
-        url: data.render_url,
-        label: outfit.length === 1 ? (outfit[0].analysis?.type || 'Tenue') : `${outfit.length} pièces`,
-        fullLabel: label,
-        items: outfit,
-        ts: Date.now(),
-      });
+      // onResult({
+      //   url: data.render_url,
+      //   label: outfit.length === 1 ? (outfit[0].analysis?.type || 'Tenue') : `${outfit.length} pièces`,
+      //   fullLabel: label,
+      //   items: outfit,
+      //   ts: Date.now(),
+      // });
     } catch (e: any) {
       alert('Erreur: ' + e.message);
     } finally {
       clearInterval(tick);
       setLoading(false);
     }
+  }
+
+  function handleSaveResult() {
+    if (!resultUrl || saved) return;
+
+    const label = outfit.map(o => o.analysis?.type || 'vêtement').join(' + ');
+
+    onResult({
+      url: resultUrl,
+      label:
+        outfit.length === 1
+          ? (outfit[0].analysis?.type || 'Tenue')
+          : `${outfit.length} pièces`,
+      fullLabel: label,
+      items: outfit,
+      ts: Date.now(),
+    });
+
+    setSaved(true);
   }
 
   async function handleDownload() {
@@ -184,7 +203,7 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
 
       {/* Actions */}
       <div className="flex gap-2 px-5 mt-4">
-        <button className="btn-ghost flex-1" onClick={() => { setSaved(true); }}>
+        <button className="btn-ghost flex-1" onClick={handleSaveResult}>
           <Heart size={16} fill={saved ? '#FF6B8A' : 'none'} className={saved ? 'text-primary' : ''} />
           {saved ? 'Sauvé' : 'Sauver'}
         </button>
