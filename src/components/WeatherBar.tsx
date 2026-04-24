@@ -31,11 +31,15 @@ export default function WeatherBar({
     }
 
 
-  useEffect(() => {
+  useEffect(() => {    
     fetch('/api/weather')
-      .then(res => res.json())
-      .then(data => {
-        setWeather(data);
+        .then(res => {
+          if (!res.ok) throw new Error(`Weather API error ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          setWeather(data);
+
 
         onWeatherChange?.({
           tag: data.tag,
@@ -48,7 +52,13 @@ export default function WeatherBar({
       .catch(console.error);
   }, []);
 
-  if (!weather) return null;
+  if (!weather) {
+    return (
+      <div className="text-xs text-dim px-5 py-3">
+        🌦️ Météo indisponible – affichage par défaut
+      </div>
+    );
+  }
   
       
 
