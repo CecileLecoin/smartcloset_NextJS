@@ -5,7 +5,7 @@ import { Search, SlidersHorizontal, Check, CloudSun, ShoppingBag } from 'lucide-
 import { apiFetch } from '@/lib/api';
 import GarmentDetail from '@/components/GarmentDetail';
 import ImportProduct from '@/components/ImportProduct';
-import type { WardrobeItem, OutfitItem, GarmentAnalysis } from '@/lib/types';
+import type { WardrobeItem, OutfitItem, GarmentAnalysis, WeatherInfo } from '@/lib/types';
 import WeatherBar from './WeatherBar';
 import GarmentCard from './GarmentCard';
 
@@ -138,6 +138,8 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
   const [detailItem, setDetailItem] = useState<WardrobeItem | null>(null);
   const [showImport, setShowImport] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [currentWeather, setCurrentWeather] = useState<WeatherInfo | null>(null);
+
 
   const loadWardrobe = useCallback(async () => {
     try {
@@ -398,7 +400,7 @@ function bestOutfitToday(
 
       
       {/* Weather bar */}
-      <WeatherBar onFilterByWeather={setSelectedWeather} onWeatherChange={setWeatherTag}/>
+      <WeatherBar onFilterByWeather={setSelectedWeather} onWeatherChange={setCurrentWeather}/>
 
       {/* Tenue du jour */}
       {outfitOfTheDay.length > 0 && (

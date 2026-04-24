@@ -51,3 +51,9 @@ export interface AffiliateItem {
   category: string;
   colors: string[];
 }
+
+export type WeatherInfo = {
+  tag: string;        // "hot" | "cool" | "cold" | "rain" | ...
+  season: string;     // "spring" | "summer" | ...
+  temperature?: number;
+};

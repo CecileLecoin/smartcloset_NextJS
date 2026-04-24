@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Heart, Download, RotateCcw } from 'lucide-react';
 import { apiPost } from '@/lib/api';
-import type { OutfitItem, TryOnResult } from '@/lib/types';
+import type { OutfitItem, TryOnResult, WeatherInfo } from '@/lib/types';
 
 interface Props {
   outfit: OutfitItem[];
@@ -12,19 +12,37 @@ interface Props {
   onAddMore: () => void;
   gender: string;
   autoTry?: boolean;
+  weather: WeatherInfo | null; // ✅ AJOUT
 }
 
-export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gender, autoTry }: Props) {
+export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gender, autoTry, weather }: Props) {
   const [loading, setLoading] = useState(false);
   const hasAutoTriggered = useRef(false);
+  const [suggestion, setSuggestion] = useState<{ message: string; count: number } | null>(null);
+
 
   // Auto-trigger try-on when coming from floating bar
   useEffect(() => {
-    if (autoTry && outfit.length > 0 && !hasAutoTriggered.current && !loading) {
-      hasAutoTriggered.current = true;
-      handleTryOn();
+    if (outfit.length === 0) return;
+    if (!weather) return;
+
+    console.log("TryOnScreen useEffect triggered with outfit and weather", { outfit, weather });
+    async function fetchSuggestion() {
+      const res = await apiPost('/api/suggestions', {
+        outfit: outfit.map(o => ({
+          category: o.analysis?.category,
+          analysis: o.analysis,
+        })),
+        weather: weather?.tag,
+        season: weather?.season,
+      });
+      console.log("✅ suggestion received", res);
+
+      setSuggestion(res);
     }
-  }, [autoTry]);
+
+    fetchSuggestion();
+  }, [outfit, weather]);
   const [progress, setProgress] = useState(0);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -119,16 +137,21 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
       </div>
 
       {/* Suggestion */}
-      {outfit.length > 0 && outfit.length < 3 && (
-        <div className="mx-5 mb-4 p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all"
-             style={{ background: 'rgba(124,92,252,0.08)', border: '1px solid rgba(124,92,252,0.15)' }}>
-          <span className="text-lg">✦</span>
-          <div>
-            <p className="text-[11px] font-semibold text-secondary">Un blazer irait bien avec cette tenue</p>
-            <p className="text-[10px] text-dim">3 blazers disponibles dans ta garde-robe</p>
-          </div>
+      {suggestion && suggestion.count > 0 && (
+      <div className="mx-5 mb-4 p-3 rounded-xl flex items-center gap-3 transition-all"
+          style={{ background: 'rgba(124,92,252,0.08)', border: '1px solid rgba(124,92,252,0.15)' }}>
+        <span className="text-lg">✦</span>
+        <div>
+          <p className="text-[11px] font-semibold text-secondary">
+            {suggestion.message}
+          </p>
+          <p className="text-[10px] text-dim">
+            {suggestion.count} pièce{suggestion.count > 1 ? 's' : ''} compatible{suggestion.count > 1 ? 's' : ''} dans ta garde-robe
+          </p>
         </div>
-      )}
+      </div>
+    )}
+
 
       {/* Result area */}
       <div className="mx-5 rounded-xl overflow-hidden shadow-elevated bg-card relative" style={{ aspectRatio: '9/14' }}>

@@ -9,7 +9,8 @@ import TryOnScreen from '@/components/TryOnScreen';
 import HistoryScreen from '@/components/HistoryScreen';
 import ProfileScreen from '@/components/ProfileScreen';
 import ToastContainer from '@/components/Toast';
-import type { OutfitItem, TryOnResult } from '@/lib/types';
+import type { OutfitItem, TryOnResult, WeatherInfo } from '@/lib/types';
+import WeatherBar from '@/components/WeatherBar';
 
 type Tab = 'wardrobe' | 'tryon' | 'history' | 'profile';
 
@@ -41,6 +42,8 @@ export default function Home() {
       setShowPhotoBubble(true);
     }
   }, [user]);
+
+  const [currentWeather, setCurrentWeather] = useState<WeatherInfo | null>(null);
 
   function dismissPhotoBubble() {
     setShowPhotoBubble(false);
@@ -101,12 +104,17 @@ export default function Home() {
 
   return (
     <div className="max-w-lg mx-auto h-screen flex flex-col bg-bg relative overflow-hidden">
+      <div  hidden>
+        {/* ✅ TOUJOURS monté mais caché*/}
+        <WeatherBar onWeatherChange={setCurrentWeather} />
+      </div>
+
       <main className="flex-1 overflow-hidden">
         {tab === 'wardrobe' && (
           <WardrobeScreen outfit={outfit} onToggleOutfit={addToOutfit} onGoTryOn={goToTryOn} />
         )}
         {tab === 'tryon' && (
-          <TryOnScreen outfit={outfit} onRemove={removeFromOutfit} onResult={addToHistory} onAddMore={() => setTab('wardrobe')} gender={gender} autoTry={autoTry} />
+          <TryOnScreen outfit={outfit} onRemove={removeFromOutfit} onResult={addToHistory} onAddMore={() => setTab('wardrobe')} gender={gender} autoTry={autoTry} weather={currentWeather} />
         )}
         {tab === 'history' && <HistoryScreen history={history} onDelete={deleteFromHistory} />}
         {tab === 'profile' && <ProfileScreen gender={gender} onGenderChange={setGender} />}

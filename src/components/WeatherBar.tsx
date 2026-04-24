@@ -1,40 +1,65 @@
 'use client';
 
+import { WeatherInfo } from '@/lib/types';
 import { useEffect, useState } from 'react';
 
 interface WeatherData {
   temp: number;
   city: string;
   tag: 'hot' | 'warm' | 'cold' | 'rain' | 'snow';
+  season: 'spring' | 'summer' | 'autumn' | 'winter';
 }
+
 
 export default function WeatherBar({
   onFilterByWeather,
   onWeatherChange,
 }: {
   onFilterByWeather?: (tag: string) => void;
-  onWeatherChange?: (tag: 'hot' | 'warm' | 'cold' | 'rain' | 'snow') => void;
+  onWeatherChange?: (weather: WeatherInfo) => void;
 }) {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
+    const [weather, setWeather] = useState<WeatherData | null>(null);
+    const [season, setSeason] = useState<string | null>(null);
+
+    ///////Fallback saisons
+    function inferSeasonFromDate(): "spring" | "summer" | "autumn" | "winter" {
+      const m = new Date().getMonth();
+      if (m >= 2 && m <= 4) return "spring";
+      if (m >= 5 && m <= 7) return "summer";
+      if (m >= 8 && m <= 10) return "autumn";
+      return "winter";
+    }
+
 
   useEffect(() => {
     fetch('/api/weather')
       .then(res => res.json())
-      .then(setWeather)
+      .then(data => {
+        setWeather(data);
+
+        onWeatherChange?.({
+          tag: data.tag,
+          season: data.season ?? inferSeasonFromDate(),
+          temperature: data.temp,
+        });
+
+        onFilterByWeather?.(data.tag);
+      })
       .catch(console.error);
   }, []);
 
   if (!weather) return null;
   
-      // ✅ C’EST CETTE LIGNE QUI MANQUAIT
-      onWeatherChange?.(weather.tag);
+      
+
 
 
   return (
     <div
       onClick={() => {
         onFilterByWeather?.(weather.tag);
-        onWeatherChange?.(weather.tag);
+        
+        onWeatherChange?.(weather);
       }}
       className="mx-5 mb-2 p-3 rounded-xl flex items-center gap-3 cursor-pointer"
       style={{
