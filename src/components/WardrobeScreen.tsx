@@ -335,40 +335,7 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
           {items.length} pièce{items.length > 1 ? 's' : ''} • adapté à ta météo du jour
         </p>
 
-        {/* Search */}
-        <div className="flex gap-2 mt-4">
-          <div className="flex-1 relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
-            <input
-              type="text"
-              placeholder="Chercher un vêtement…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm outline-none focus:border-secondary transition-colors"
-            />
-          </div>
-          <button className="w-11 h-11 bg-card border border-border rounded-xl flex items-center justify-center text-dim"
-            onClick={() => setShowImport(true)} title="Importer un produit">
-            <ShoppingBag size={16} />
-          </button>
-        </div>
-
-        {/* Category chips */}
-        <div className="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar">
-          {CATEGORY_CHIPS.map(c => (
-            <button
-              key={c.key}
-              onClick={() => setFilter(c.key)}
-              className={`chip ${filter === c.key ? 'active' : ''}`}
-            >
-              {c.emoji && <span>{c.emoji}</span>} {c.label} · {(counts as any)[c.key] || 0}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      
-      {/* Weather bar */}
+        {/* Weather bar */}
       <WeatherBar onFilterByWeather={setSelectedWeather} onWeatherChange={setCurrentWeather}/>
 
       
@@ -449,7 +416,40 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
       </section>
     )}
 
+        {/* Search */}
+        <div className="flex gap-2 mt-4">
+          <div className="flex-1 relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
+            <input
+              type="text"
+              placeholder="Chercher un vêtement…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm outline-none focus:border-secondary transition-colors"
+            />
+          </div>
+          <button className="w-11 h-11 bg-card border border-border rounded-xl flex items-center justify-center text-dim"
+            onClick={() => setShowImport(true)} title="Importer un produit">
+            <ShoppingBag size={16} />
+          </button>
+        </div>
+
+        {/* Category chips */}
+        <div className="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar">
+          {CATEGORY_CHIPS.map(c => (
+            <button
+              key={c.key}
+              onClick={() => setFilter(c.key)}
+              className={`chip ${filter === c.key ? 'active' : ''}`}
+            >
+              {c.emoji && <span>{c.emoji}</span>} {c.label} · {(counts as any)[c.key] || 0}
+            </button>
+          ))}
+        </div>
+      </div>
+
       
+ 
 
 
       {/* Season chips */}
