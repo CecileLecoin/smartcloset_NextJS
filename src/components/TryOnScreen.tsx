@@ -66,7 +66,7 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
 
       clearInterval(tick);
       setProgress(100);
-      setResultUrl(data.render_url);
+      setResultUrl(`${data.render_url}?t=${Date.now()}`);
       setSaved(false);
 
       const label = outfit.map(o => o.analysis?.type || 'vêtement').join(' + ');
