@@ -19,6 +19,7 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
   const [loading, setLoading] = useState(false);
   const hasAutoTriggered = useRef(false);
   const [suggestion, setSuggestion] = useState<{ message: string; count: number } | null>(null);
+  const [showSharePrompt, setShowSharePrompt] = useState(false);
 
 
   // Auto-trigger try-on when coming from floating bar
@@ -104,8 +105,36 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
     setSaved(true);
   }
 
+  // Propose sharing the result (mobile Web Share API or fallback)
+  function proposeShare(file: File) {
+    const message =
+      "Tu en penses quoi de cette tenue ? 🤍👗\nDonne-moi ton avis !";
+
+    // ✅ Web Share API (mobile)
+    // @ts-ignore
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      // @ts-ignore
+      navigator.share({
+        title: 'Mon essayage FitLab',
+        text: message,
+        files: [file],
+      });
+      return;
+    }
+
+    // ❌ Fallback desktop
+    setShowSharePrompt(true);
+  }
+
+
   async function handleDownload() {
     if (!resultUrl) return;
+    
+    const res = await fetch(resultUrl);
+    const blob = await res.blob();
+    const file = new File([blob], `fitlab_${Date.now()}.png`, { type: 'image/png' });
+
+    // ✅ Télécharger
     try {
       const res = await fetch(resultUrl);
       const blob = await res.blob();
@@ -115,6 +144,11 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
       a.download = `fitlab_${Date.now()}.png`;
       a.click();
       URL.revokeObjectURL(url);
+
+      
+      // ✅ Proposer le partage juste après
+      proposeShare(file);
+
     } catch {}
   }
 
@@ -226,6 +260,38 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
           </button>
         </div>
       )}
+
+      {showSharePrompt && (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="bg-card rounded-2xl p-5 w-[280px] text-center shadow-elevated">
+          <p className="text-sm font-bold mb-2">👀 Demander un avis ?</p>
+          <p className="text-xs text-dim mb-4">
+            Partage cette tenue avec tes amis pour avoir leur opinion
+          </p>
+
+          <div className="flex gap-2">
+            <button
+              className="btn-primary flex-1 text-xs"
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  "Tu en penses quoi de cette tenue ? 👗🤍"
+                );
+                setShowSharePrompt(false);
+                alert("Message copié 👍");
+              }}
+            >
+              Copier le message
+            </button>
+            <button
+              className="btn-ghost flex-1 text-xs"
+              onClick={() => setShowSharePrompt(false)}
+            >
+              Plus tard
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
       {/* Affiliate buy banners — show for each affiliate item in outfit */}
       {outfit.filter(o => (o as any).affiliate?.is_affiliate).map(item => {
