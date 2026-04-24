@@ -37,9 +37,21 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
 
   async function loadBasePhoto() {
     try {
-      const data = await apiFetch<{ url: string }>(`/api/base-model?morphology=X&gender=${gender}`);
-      setBasePhoto(data.url);
-    } catch { setBasePhoto(null); }
+      const data = await apiFetch<{ url: string | null }>(
+        `/api/base-model?morphology=X&gender=${gender}`
+      );
+
+      if (data?.url) {
+        // ✅ Cache-buster pour forcer le reload de l’image
+        setBasePhoto(`${data.url}?t=${Date.now()}`);
+      } else {
+        // ✅ Cas où aucune photo n’est encore définie
+        setBasePhoto(null);
+      }
+    } catch (err) {
+      console.error("Failed to load base photo", err);
+      setBasePhoto(null);
+    }
   }
 
   async function handleUpload(files: FileList | null) {
