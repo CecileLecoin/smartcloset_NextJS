@@ -1,13 +1,34 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, SlidersHorizontal, Check, CloudSun, ShoppingBag } from 'lucide-react';
+import { Search, Check, ShoppingBag } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import WeatherBar from './WeatherBar';
+import GarmentCard from './GarmentCard';
 import GarmentDetail from '@/components/GarmentDetail';
 import ImportProduct from '@/components/ImportProduct';
 import type { WardrobeItem, OutfitItem, GarmentAnalysis, WeatherInfo } from '@/lib/types';
-import WeatherBar from './WeatherBar';
-import GarmentCard from './GarmentCard';
+
+/* ---------------- TYPES ---------------- */
+
+interface ClaudeOutfit {
+  label: string;
+  reason: string;
+  style: string;
+  categories: string[];
+  colors: string[];
+}
+
+interface Props {
+  outfit: OutfitItem[];
+  onToggleOutfit: (item: OutfitItem) => void;
+  onGoTryOn: () => void;
+}
+
+
+
+
+/* --------------- HELPERS ---------------- */
 
 type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 type SeasonFilter = Season | 'all';
@@ -47,11 +68,6 @@ const WEATHER_CHIPS = [
   { key: 'warm', label: 'Tempéré', emoji: '😌' },
 ];
 
-interface Props {
-  outfit: OutfitItem[];
-  onToggleOutfit: (item: OutfitItem) => void;
-  onGoTryOn: () => void;
-}
 
 function getCat(item: WardrobeItem):  GarmentCategory {
   const s = ((item.analysis?.category || '') + ' ' + (item.analysis?.type || '')).toLowerCase();
@@ -125,36 +141,110 @@ function getWeatherTags(item: WardrobeItem): string[] {
   return Array.from(tags);
 }
 
+// mes tenues recommandees par claude
+function matchesColor(
+  item: WardrobeItem,
+  targetColors: string[]
+): boolean {
+  const itemColors = (item.analysis?.colors || []).map(c => c.toLowerCase());
+  return targetColors.some(tc =>
+    itemColors.some(ic => ic.includes(tc.toLowerCase()))
+  );
+}
+function findSuggestedGarments(
+  items: WardrobeItem[],
+  outfit: ClaudeOutfit
+): Record<string, WardrobeItem[]> {
+  const result: Record<string, WardrobeItem[]> = {};
+
+  outfit.categories.forEach(category => {
+    const candidates = items
+      .filter(item => getCat(item) === category)
+      .filter(item => matchesColor(item, outfit.colors));
+
+    result[category] = candidates.slice(0, 3); // max 3 par catégorie
+  });
+
+  return result;
+}
+
+
+
+/* --------------- COMPONENT ---------------- */
+
 export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Props) {
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState('all');
-  const [season, setSeason] = useState('all');
-  const [selectedSeason, setSelectedSeason] = useState<GarmentAnalysis['season'] | null>(null);
-  const [selectedWeather, setSelectedWeather] = useState('all');
-  const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [filter, setFilter] = useState('all');
+
+  const [search, setSearch] = useState('');
+  const [selectedWeather, setSelectedWeather] = useState('all');
+  const [selectedSeason, setSelectedSeason] =
+    useState<GarmentAnalysis['season'] | null>(null);
+
   const [detailItem, setDetailItem] = useState<WardrobeItem | null>(null);
   const [showImport, setShowImport] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    /* ----------- WEATHER ----------- */
+
   const [currentWeather, setCurrentWeather] = useState<WeatherInfo | null>(null);
 
+  /* -------- OUTFIT OF THE DAY (CLAUDE) -------- */
+
+  const [dailyOutfits, setDailyOutfits] = useState<ClaudeOutfit[]>([]);
+  const [currentOutfitIndex, setCurrentOutfitIndex] = useState(0);
+  const [loadingOutfit, setLoadingOutfit] = useState(false);
+
+
+  
+ /* ----------- LOAD WARDROBE ----------- */
 
   const loadWardrobe = useCallback(async () => {
     try {
-      setError(null);
       const data = await apiFetch<{ items: WardrobeItem[] }>('/api/wardrobe');
-      setItems(data.items || []);
+      setItems(data.items ?? []);
     } catch (e: any) {
-      console.error('Load wardrobe error:', e);
-      setError(e.message || 'Impossible de charger la garde-robe');
+      setError(e.message);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadWardrobe(); }, [loadWardrobe]);
+  useEffect(() => {
+    loadWardrobe();
+  }, [loadWardrobe]);
+
+  
+/* ----------- LOAD OUTFIT OF THE DAY (IA) ----------- */
+
+  useEffect(() => {
+    async function fetchOutfitOfTheDay() {
+      setLoadingOutfit(true);
+      try {
+        const res = await apiFetch<{ outfits: ClaudeOutfit[] }>(
+          '/api/outfit-of-the-day',
+          { method: 'POST' }
+        );
+        setDailyOutfits(res.outfits ?? []);
+        setCurrentOutfitIndex(0);
+      } catch (err) {
+        console.error('Failed to load daily outfit', err);
+      } finally {
+        setLoadingOutfit(false);
+      }
+    }
+
+    fetchOutfitOfTheDay();
+  }, []);
+
+  const currentOutfit = dailyOutfits[currentOutfitIndex];
+  const suggestedByCategory = currentOutfit
+    ? findSuggestedGarments(items, currentOutfit)
+    : {};
+
 
   async function handleUpload(files: FileList | null) {
     if (!files?.length) return;
@@ -213,134 +303,34 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
   return true;
 });
 
-// Outifit of the day suggestion (simplified heuristic)
-//La tenue du jour (score en fct de la météo + des facvoris)
-function getCurrentSeason(): Season {
-  const month = new Date().getMonth(); // 0 = janvier
-
-  if (month >= 2 && month <= 4) return 'spring';
-  if (month >= 5 && month <= 7) return 'summer';
-  if (month >= 8 && month <= 10) return 'autumn';
-  return 'winter';
-}
-const seasonForOutfit = getCurrentSeason();
-const [outfitOfTheDay, setOutfitOfTheDay] = useState<WardrobeItem[]>([]);
-const [weatherTag, setWeatherTag] = useState<
-  'hot' | 'warm' | 'cold' | 'rain' | 'snow' | null
->(null);
-//const [thisSeason, setThisSeason] = useState<Season | null>(null);
-
-useEffect(() => {
-  // Sécurité : on attend que tout soit prêt
-  console.log('useEffect for outfitOfTheDay', { items, weatherTag, seasonForOutfit });
-  if (!items || items.length === 0) return;
-  if (!weatherTag) return;
-  if (!seasonForOutfit) return;
-
-  console.log('🔥 Calling bestOutfitOfTheDay');
-
-  const todayOutfit = bestOutfitToday(
-    items,
-    weatherTag,
-    seasonForOutfit
-  );
-
-  console.log('✅ Outfit computed:', todayOutfit);
-
-  setOutfitOfTheDay(todayOutfit);
-}, [items, weatherTag, seasonForOutfit]);
-
-function scoreGarment(
-  item: WardrobeItem,
-  weatherTag: 'hot' | 'warm' | 'cold' | 'rain' | 'snow',
-  currentSeason: 'spring' | 'summer' | 'autumn' | 'winter'
-): number {
-  let score = 0;
-
-  // ⭐ Favori
-  if (item.favorite) score += 30;
-
-  // 🌦 Météo
-  const weatherTags = getWeatherTags(item);
-  if (weatherTags.includes(weatherTag)) score += 25;
-
-  // 🍂 Saison
-  if (getSeasons(item).includes(currentSeason)) score += 20;
-
-  // 🧵 Matière (fallback intelligent)
-  const fabric = (item.analysis?.fabric_texture || '').toLowerCase();
-  if (
-    weatherTag === 'cold' &&
-    /laine|wool|doudoune|pull/.test(fabric)
-  ) score += 10;
-
-  if (
-    weatherTag === 'hot' &&
-    /lin|coton|cotton|light/.test(fabric)
-  ) score += 10;
-
-  return score;
-}
-function bestOutfitToday(
-  items: WardrobeItem[],
-  weatherTag: 'hot' | 'warm' | 'cold' | 'rain' | 'snow',
-  season: Season
-): WardrobeItem[] {
-  console.log('🔥 bestOutfitToday CALLED');
-
-  const byCat: Record<
-    GarmentCategory,
-    { item: WardrobeItem; score: number }[]
-  > = {
-    haut: [],
-    bas: [],
-    robe: [],
-    veste: [],
-    accessoire: [],
-  };
-
-  items.forEach(item => {
-    const cat = getCat(item);
-    const score = scoreGarment(item, weatherTag, season);
-    byCat[cat].push({ item, score });
-  });
-
-  Object.values(byCat).forEach(arr =>
-    arr.sort((a, b) => b.score - a.score)
-  );
-
-  // Priorité robe
-  if (byCat.robe[0]) {
-    return [byCat.robe[0].item];
-  }
-
-  const outfit: WardrobeItem[] = [];
-
-  if (byCat.haut[0]) outfitOfTheDay.push(byCat.haut[0].item);
-  if (byCat.bas[0]) outfitOfTheDay.push(byCat.bas[0].item);
-
-  if (
-    ['cold', 'rain', 'snow'].includes(weatherTag) &&
-    byCat.veste[0]
-  ) {
-    outfitOfTheDay.push(byCat.veste[0].item);
-  }
-
-  console.log('✅ Outfit of the day candidates:', outfitOfTheDay);
-  return outfitOfTheDay;
-}
 
 
-    /*if (search) {
-      const hay = [
-        item.analysis?.type, item.analysis?.style, item.analysis?.fit,
-        item.analysis?.pattern, ...(item.analysis?.colors || []),
-        item.analysis?.primary_color,
-      ].filter(Boolean).join(' ').toLowerCase();
-      if (!hay.includes(search.toLowerCase())) return false;
+
+
+  /* ----------- LOAD OUTFIT OF THE DAY (IA) ----------- */
+
+  useEffect(() => {
+    async function fetchOutfitOfTheDay() {
+      setLoadingOutfit(true);
+      try {
+        const res = await apiFetch<{ outfits: ClaudeOutfit[] }>(
+          '/api/outfit-of-the-day',
+          { method: 'POST' }
+        );
+        setDailyOutfits(res.outfits ?? []);
+        setCurrentOutfitIndex(0);
+      } catch (err) {
+        console.error('Failed to load daily outfit', err);
+      } finally {
+        setLoadingOutfit(false);
+      }
     }
-    return true;
-  });*/
+
+    fetchOutfitOfTheDay();
+  }, []);
+
+  /* ---------------- RENDER ---------------- */
+
 
   const counts = { all: items.length, haut: 0, bas: 0, robe: 0, veste: 0, accessoire: 0 };
   items.forEach(i => { const c = getCat(i); if (c in counts) (counts as any)[c]++; });
@@ -402,26 +392,86 @@ function bestOutfitToday(
       {/* Weather bar */}
       <WeatherBar onFilterByWeather={setSelectedWeather} onWeatherChange={setCurrentWeather}/>
 
-      {/* Tenue du jour */}
-      {outfitOfTheDay.length > 0 && (
-        <section className="mx-5 mb-6 p-4 rounded-2xl bg-secondary/5 border border-secondary/15">
-          <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
-            👗 Tenue idéale aujourd’hui
-          </h3>
+      
+      
+    {/* -------- OUTFIT OF THE DAY -------- */}
+    {currentOutfit && (
+      <section className="mx-5 mb-6 p-4 rounded-2xl bg-secondary/5 border border-secondary/15">
 
-          <p className="text-xs text-dim mb-3">
-            Basée sur la météo et tes favoris
-          </p>
+        {/* 🧠 TEXTE CLAUDE */}
+        <h3 className="font-bold text-sm mb-1">
+          👗 {currentOutfit.label}
+        </h3>
 
-          <div className="flex gap-3 overflow-x-auto no-scrollbar">
-            {outfitOfTheDay.map(item => (
-              <div key={item.id} className="shrink-0 w-[110px]">
-                <GarmentCard item={item} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        <p className="text-xs text-dim mb-3">
+          {currentOutfit.reason}
+        </p>
+
+        {/* 🎯 TAGS CATÉGORIES */}
+        <div className="flex flex-wrap gap-1 mb-2">
+          {currentOutfit.categories.map(cat => (
+            <span
+              key={cat}
+              className="px-2 py-0.5 text-[10px] rounded-full bg-secondary/10 text-secondary capitalize"
+            >
+              {cat}
+            </span>
+          ))}
+        </div>
+
+        {/* 🎨 COULEURS */}
+        <div className="flex flex-wrap gap-1 mb-4">
+          {currentOutfit.colors.map(color => (
+            <span
+              key={color}
+              className="px-2 py-0.5 text-[10px] rounded-full bg-border text-dim capitalize"
+            >
+              {color}
+            </span>
+          ))}
+        </div>
+
+        {/* 👚 VÊTEMENTS CONSEILLÉS (À PARTIR DE TON DRESSING) */}
+        <div className="space-y-3">
+          {Object.entries(suggestedByCategory).map(([category, garments]) => (
+            <div key={category}>
+              <p className="text-xs font-semibold mb-1 capitalize">
+                {category} suggérés
+              </p>
+
+              {garments.length === 0 ? (
+                <p className="text-[10px] text-dim italic">
+                  Aucun vêtement correspondant dans ton dressing.
+                </p>
+              ) : (
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                  {garments.map(g => (
+                    <div key={g.id} className="w-[100px] shrink-0">
+                      <GarmentCard item={g} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* 🔄 AUTRE TENUE */}
+        {dailyOutfits.length > 1 && (
+          <button
+            onClick={() =>
+              setCurrentOutfitIndex(i => (i + 1) % dailyOutfits.length)
+            }
+            className="mt-4 px-3 py-1.5 text-xs font-semibold rounded-lg border border-secondary text-secondary hover:bg-secondary/10 transition"
+          >
+            🔄 Autre tenue
+          </button>
+        )}
+      </section>
+    )}
+
+      
+
 
       {/* Season chips */}
         <p className="text-[9px] font-bold uppercase tracking-widest text-dim px-5 mb-1.5">
@@ -631,3 +681,15 @@ function bestOutfitToday(
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
