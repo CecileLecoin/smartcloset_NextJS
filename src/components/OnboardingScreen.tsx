@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth';
 
 export default function OnboardingScreen() {
-  const { signInWithGoogle, loading } = useAuth();
+  const { signInWithGoogle, signInAsGuest, loading } = useAuth();
 
   return (
     <div
@@ -54,6 +54,15 @@ export default function OnboardingScreen() {
         </svg>
         {loading ? 'Connexion…' : 'Continuer avec Google'}
       </button>
+
+      
+      <button
+        onClick={signInAsGuest}
+        className="w-full border border-border py-3 rounded-xl font-semibold text-dim"
+      >
+        👀 Continuer en tant qu’invité
+      </button>
+
 
       <p className="text-[10px] text-dim mt-4 leading-relaxed">
         En continuant, vous acceptez nos conditions d'utilisation

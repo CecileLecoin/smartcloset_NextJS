@@ -22,13 +22,21 @@ const TABS: { id: Tab; icon: typeof Shirt; label: string }[] = [
 ];
 
 export default function Home() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isGuest } = useAuth();
   const [tab, setTab] = useState<Tab>('wardrobe');
   const [outfit, setOutfit] = useState<OutfitItem[]>([]);
   const [history, setHistory] = useState<TryOnResult[]>([]);
   const [gender, setGender] = useState('female');
   const [autoTry, setAutoTry] = useState(false);
   const [showPhotoBubble, setShowPhotoBubble] = useState(false);
+  const { signOut } = useAuth()
+
+  
+  const canAddGarment   = !isGuest;
+  const canEditProfile = !isGuest;
+  const canEditHistory = !isGuest;
+
+
 
   useEffect(() => {
     try {
@@ -116,12 +124,41 @@ export default function Home() {
         {tab === 'tryon' && (
           <TryOnScreen outfit={outfit} onRemove={removeFromOutfit} onResult={addToHistory} onAddMore={() => setTab('wardrobe')} gender={gender} autoTry={autoTry} weather={currentWeather} />
         )}
-        {tab === 'history' && <HistoryScreen history={history} onDelete={deleteFromHistory} />}
-        {tab === 'profile' && <ProfileScreen gender={gender} onGenderChange={setGender} />}
+        {tab === 'history' && canEditHistory && <HistoryScreen history={history} onDelete={deleteFromHistory} />}
+        {tab === 'profile' && (
+          canEditProfile ? (
+            <ProfileScreen
+              gender={gender}
+              onGenderChange={setGender}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full px-6 text-center text-dim gap-4">
+              <div className="text-2xl">🔒</div>
+
+              <p className="text-sm font-semibold">
+                Profil verrouillé en mode démo
+              </p>
+
+              <p className="text-xs max-w-xs">
+                Crée un compte pour personnaliser ton profil et sauvegarder tes essais.
+              </p>
+
+              {/* ✅ Bouton Déconnexion */}
+              <button
+                onClick={signOut}
+                className="mt-4 px-5 py-2 rounded-lg text-sm font-semibold
+                          bg-card border border-border text-primary
+                          hover:bg-border transition"
+              >
+                Se déconnecter
+              </button>
+            </div>
+          )
+        )}
       </main>
 
       {/* Photo bubble */}
-      {showPhotoBubble && (
+      {showPhotoBubble && canAddGarment && (
         <div className="absolute bottom-24 right-4 z-50 max-w-[160px] animate-bounce-soft"
           onClick={() => { dismissPhotoBubble(); setTab('profile'); }}>
           <div className="bg-primary text-white text-[11px] font-semibold leading-snug px-3 py-2 rounded-2xl rounded-br-none shadow-elevated cursor-pointer">
@@ -151,7 +188,7 @@ export default function Home() {
       </nav>
 
       {/* FAB */}
-      {tab === 'wardrobe' && (
+      {tab === 'wardrobe' && canAddGarment && (
         <button className="fab" onClick={() => document.getElementById('file-upload')?.click()} aria-label="Ajouter un vêtement">+</button>
       )}
 
