@@ -23,6 +23,7 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
   const [suggestion, setSuggestion] = useState<{ message: string; count: number } | null>(null);
   const [showSharePrompt, setShowSharePrompt] = useState(false);
   const { isGuest } = useAuth();
+  const fullLabel = "";
 
   // Auto-trigger try-on when coming from floating bar
   useEffect(() => {
@@ -88,7 +89,7 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
     }
   }
 
-  function handleSaveResult() {
+  async function handleSaveResult() {
     if (isGuest) return; // 🔒 sécurité
     if (!resultUrl || saved) return;
 
@@ -105,7 +106,17 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
       ts: Date.now(),
     });
 
+    const fd = new FormData();
+    fd.append('render_url', resultUrl);
+    fd.append('garment_ids', JSON.stringify(outfit.map(o => o.id)));
+    const data = await apiPost<{ success: boolean; render_url: string; garment_ids: string}>('/api/save_tryon', fd);
+    if (!data.success) throw new Error('Erreur enregistrement');
+    
+    // ✅ 1. Remplacer l'image par l'URL finale (bucket)
+    setResultUrl(data.render_url);
+
     setSaved(true);
+
   }
 
   // Propose sharing the result (mobile Web Share API or fallback)
