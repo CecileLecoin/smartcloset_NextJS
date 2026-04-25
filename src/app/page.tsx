@@ -36,6 +36,7 @@ export default function Home() {
   const canEditProfile = !isGuest;
   const canEditHistory = !isGuest;
 
+  console.log('API URL =', process.env.NEXT_PUBLIC_API_URL)
 
 
   useEffect(() => {
@@ -106,7 +107,11 @@ export default function Home() {
     return (
       <div className="max-w-lg mx-auto h-screen bg-bg overflow-hidden">
         <OnboardingScreen />
+        <a href={`${process.env.NEXT_PUBLIC_API_URL}/cgu`} target="_blank" >
+          Conditions Générales d’Utilisation
+        </a>
       </div>
+      
     );
   }
 

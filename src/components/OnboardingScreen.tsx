@@ -1,9 +1,12 @@
 'use client';
 
 import { useAuth } from '@/lib/auth';
+import { useState } from 'react';
+import AcceptCGU from '@/components/CGU' // ajuste le chemin si besoin
 
 export default function OnboardingScreen() {
   const { signInWithGoogle, signInAsGuest, loading } = useAuth();
+  const [cguAccepted, setCguAccepted] = useState(false)
 
   return (
     <div
@@ -40,10 +43,13 @@ export default function OnboardingScreen() {
           </div>
         ))}
       </div>
-
+        <AcceptCGU
+          accepted={cguAccepted}
+          onChange={setCguAccepted}
+        />
       <button
         onClick={signInWithGoogle}
-        disabled={loading}
+        disabled={!cguAccepted || loading}
         className="w-full py-4 bg-card border-[1.5px] border-border rounded-2xl font-bold text-sm text-dark flex items-center justify-center gap-2 shadow-card mb-2.5 active:scale-[0.98] transition-all disabled:opacity-50"
       >
         <svg width="18" height="18" viewBox="0 0 24 24">
@@ -58,7 +64,14 @@ export default function OnboardingScreen() {
       
       <button
         onClick={signInAsGuest}
-        className="w-full border border-border py-3 rounded-xl font-semibold text-dim"
+        disabled={!cguAccepted || loading}
+        className={`
+          w-full py-3 rounded-xl font-semibold transition-all
+          ${(!cguAccepted || loading)
+            ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
+            : 'bg-white text-dark border border-border hover:bg-border active:scale-[0.98]'
+          }
+        `}
       >
         👀 Continuer en tant qu’invité
       </button>
