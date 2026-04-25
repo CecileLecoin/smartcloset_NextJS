@@ -34,7 +34,7 @@ export default function Home() {
   
   const canAddGarment   = !isGuest;
   const canEditProfile = !isGuest;
-  const canEditHistory = !isGuest;
+  //const canEditHistory = !isGuest;
 
   console.log('API URL =', process.env.NEXT_PUBLIC_API_URL)
 
@@ -129,7 +129,7 @@ export default function Home() {
         {tab === 'tryon' && (
           <TryOnScreen outfit={outfit} onRemove={removeFromOutfit} onResult={addToHistory} onAddMore={() => setTab('wardrobe')} gender={gender} autoTry={autoTry} weather={currentWeather} />
         )}
-        {tab === 'history' && canEditHistory && <HistoryScreen history={history} onDelete={deleteFromHistory} />}
+        {tab === 'history' && <HistoryScreen history={history} onDelete={deleteFromHistory} />}
         {tab === 'profile' && (
           canEditProfile ? (
             <ProfileScreen

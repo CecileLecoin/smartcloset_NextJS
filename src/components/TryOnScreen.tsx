@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Heart, Download, RotateCcw } from 'lucide-react';
 import { apiPost } from '@/lib/api';
 import type { OutfitItem, TryOnResult, WeatherInfo } from '@/lib/types';
+import { useAuth } from '@/lib/auth';
+
 
 interface Props {
   outfit: OutfitItem[];
@@ -20,7 +22,7 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
   const hasAutoTriggered = useRef(false);
   const [suggestion, setSuggestion] = useState<{ message: string; count: number } | null>(null);
   const [showSharePrompt, setShowSharePrompt] = useState(false);
-
+  const { isGuest } = useAuth();
 
   // Auto-trigger try-on when coming from floating bar
   useEffect(() => {
@@ -87,6 +89,7 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
   }
 
   function handleSaveResult() {
+    if (isGuest) return; // 🔒 sécurité
     if (!resultUrl || saved) return;
 
     const label = outfit.map(o => o.analysis?.type || 'vêtement').join(' + ');
@@ -237,9 +240,31 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
 
       {/* Actions */}
       <div className="flex gap-2 px-5 mt-4">
-        <button className="btn-ghost flex-1" onClick={handleSaveResult}>
-          <Heart size={16} fill={saved ? '#FF6B8A' : 'none'} className={saved ? 'text-primary' : ''} />
-          {saved ? 'Sauvé' : 'Sauver'}
+        
+        {isGuest && (
+          <p className="text-[10px] text-dim mt-2 text-center">
+            💾 Crée un compte pour sauvegarder tes essayages et les retrouver plus tard
+          </p>
+        )}
+
+        <button
+          className={`
+            btn-ghost flex-1 transition-all
+            ${isGuest
+              ? 'opacity-40 cursor-not-allowed'
+              : ''
+            }
+          `}
+          onClick={handleSaveResult}
+          disabled={isGuest}
+          title={isGuest ? 'Crée un compte pour sauvegarder tes essayages' : undefined}
+        >
+          <Heart
+            size={16}
+            fill={!isGuest && saved ? '#FF6B8A' : 'none'}
+            className={!isGuest && saved ? 'text-primary' : ''}
+          />
+          {isGuest ? 'Sauvegarde désactivée' : saved ? 'Sauvé' : 'Sauver'}
         </button>
         <button
           className="btn-primary flex-1"

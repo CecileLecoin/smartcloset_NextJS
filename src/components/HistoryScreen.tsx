@@ -2,6 +2,7 @@
 
 import { Trash2 } from 'lucide-react';
 import type { TryOnResult } from '@/lib/types';
+import { useAuth } from '@/lib/auth';
 
 interface Props {
   history: TryOnResult[];
@@ -19,9 +20,14 @@ function timeAgo(ts: number): string {
   if (days === 1) return 'Hier';
   if (days < 7) return `Il y a ${days} jours`;
   return new Date(ts).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+
+
+
 }
 
 export default function HistoryScreen({ history, onDelete }: Props) {
+  // compte invité
+  const { isGuest } = useAuth();
   return (
     <div className="h-full overflow-y-auto pb-4">
       <div className="px-5 pt-14 pb-2">
@@ -37,6 +43,17 @@ export default function HistoryScreen({ history, onDelete }: Props) {
           <p>Aucun essayage encore<br />
             <span className="text-xs opacity-60">Composez une tenue et cliquez "Essayer"</span>
           </p>
+          {isGuest && (
+            <div className="mx-5 mt-2 mb-3 p-3 rounded-xl text-center
+                            bg-primary/5 border border-primary/10">
+              <p className="text-[11px] font-semibold text-primary mb-0.5">
+                🔒 Historique réservé aux comptes
+              </p>
+              <p className="text-[10px] text-dim leading-relaxed">
+                Crée un compte pour sauvegarder tes essayages et les retrouver ici plus tard.
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 px-5">
