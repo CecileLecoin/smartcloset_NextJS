@@ -5,8 +5,12 @@ import { useState } from 'react';
 import AcceptCGU from '@/components/CGU' // ajuste le chemin si besoin
 
 export default function OnboardingScreen() {
-  const { signInWithGoogle, signInAsGuest, loading } = useAuth();
+  const { signInWithGoogle, signInAsGuest, signInWithEmail, signUpWithEmail, loading } = useAuth();
   const [cguAccepted, setCguAccepted] = useState(false)
+  const [mode, setMode] = useState<'none' | 'signup' | 'signin'>('none');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <div
@@ -61,7 +65,93 @@ export default function OnboardingScreen() {
         {loading ? 'Connexion…' : 'Continuer avec Google'}
       </button>
 
+
+      {/*signup/in avec email*/}
+      <button
+        onClick={() => setMode('signup')}
+        disabled={!cguAccepted || loading}
+        className="w-full py-4 bg-card border-[1.5px] border-border rounded-2xl
+                  font-bold text-sm text-dark flex items-center justify-center gap-2
+                  shadow-card mb-2 active:scale-[0.98] transition-all disabled:opacity-50"
+      >
+        {/* Icone email */}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M4 6h16v12H4z" stroke="#7C5CFC" strokeWidth="1.5" />
+          <path d="M4 6l8 6 8-6" stroke="#7C5CFC" strokeWidth="1.5" />
+        </svg>
+
+        Créer un compte avec email
+      </button>
+
       
+      <button
+        onClick={() => setMode('signin')}
+        disabled={!cguAccepted || loading}
+        className="w-full py-4 bg-card border-[1.5px] border-border rounded-2xl
+                  font-bold text-sm text-dark flex items-center justify-center gap-2
+                  shadow-card mb-4 active:scale-[0.98] transition-all disabled:opacity-50"
+      >
+        {/* Icône cadenas */}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <rect x="5" y="10" width="14" height="9" rx="2" stroke="#7C5CFC" strokeWidth="1.5" />
+          <path d="M8 10V7a4 4 0 118 0v3" stroke="#7C5CFC" strokeWidth="1.5" />
+        </svg>
+
+        Se connecter avec email
+      </button>
+
+
+      {mode !== 'none' && (
+        <div className="w-full mt-4 flex flex-col gap-3">
+          <input
+            type="email"
+            placeholder="Adresse email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-border text-sm"
+          />
+
+          <input
+            type="password"
+            placeholder="Mot de passe (min. 6 caractères)"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-border text-sm"
+          />
+
+          {error && (
+            <p className="text-xs text-red-500">{error}</p>
+          )}
+
+          <button
+            disabled={!cguAccepted || loading}
+            onClick={async () => {
+              setError(null);
+              try {
+                if (mode === 'signup') {
+                  await signUpWithEmail(email, password);
+                } else {
+                  await signInWithEmail(email, password);
+                }
+              } catch (e: any) {
+                setError(e.message);
+              }
+            }}
+            className="w-full py-3 rounded-xl font-semibold bg-primary text-white"
+          >
+            {mode === 'signup' ? 'Créer mon compte' : 'Se connecter'}
+          </button>
+
+          <button
+            onClick={() => setMode('none')}
+            className="text-xs text-dim underline"
+          >
+            Annuler
+          </button>
+        </div>
+      )}
+
+      {/* Bouton de connexion en tant qu'invité */}
       <button
         onClick={signInAsGuest}
         disabled={!cguAccepted || loading}

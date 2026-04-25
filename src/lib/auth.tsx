@@ -12,6 +12,8 @@ interface AuthContextType {
 
   signInWithGoogle: () => Promise<void>;
   signInAsGuest: () => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -22,6 +24,8 @@ const AuthContext = createContext<AuthContextType>({
   isGuest: true,
   signInWithGoogle: async () => {},
   signInAsGuest: async () => {},
+  signUpWithEmail: async () => {},
+  signInWithEmail: async () => {},
   signOut: async () => {},
 });
 
@@ -97,6 +101,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function signUpWithEmail(email: string, password: string) {
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    setLoading(false);
+
+    if (error) throw error;
+  }
+
+  async function signInWithEmail(email: string, password: string) {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setLoading(false);
+
+    if (error) throw error;
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     setUser(null);
@@ -120,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isGuest, signInWithGoogle, signInAsGuest, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isGuest, signInWithGoogle, signInAsGuest, signUpWithEmail, signInWithEmail, signOut }}>
       {children}
     </AuthContext.Provider>
   );
