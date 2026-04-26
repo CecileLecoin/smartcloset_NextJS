@@ -323,6 +323,7 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
         type="file"
         id="file-upload"
         accept="image/*"
+        capture="environment"   // ✅ clé magique pour ouvrir directement la caméra sur mobile
         multiple
         className="hidden"
         onChange={e => handleUpload(e.target.files)}

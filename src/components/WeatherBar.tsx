@@ -76,9 +76,9 @@ export default function WeatherBar({
   return (
     <div
       onClick={() => {
-        onFilterByWeather?.(weather.tag);
+        onFilterByWeather?.(weather!.tag);
         
-        onWeatherChange?.(weather);
+        onWeatherChange?.(weather!);
       }}
       className="mx-5 mb-2 p-3 rounded-xl flex items-center gap-3 cursor-pointer"
       style={{
@@ -88,7 +88,7 @@ export default function WeatherBar({
     >
       <div>
         <p className="font-bold text-sm">
-          {weather.temp}° — {weather.city}
+          {weather!.temp}° — {weather!.city}
         </p>
         <p className="text-xs text-dim">
           Conditions actuelles
@@ -96,7 +96,7 @@ export default function WeatherBar({
       </div>
 
       <span className="ml-auto text-xs font-semibold">
-        {weather.tag}
+        {weather!.tag}
       </span>
     </div>
   );
