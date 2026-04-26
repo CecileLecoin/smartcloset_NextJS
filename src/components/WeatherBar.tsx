@@ -47,7 +47,7 @@ export default function WeatherBar({
           temperature: data.temp,
         });
 
-        onFilterByWeather?.(data.tag);
+        //onFilterByWeather?.(data.tag);
       })
       .catch(console.error);
   }, []);

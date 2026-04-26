@@ -31,8 +31,8 @@ export default function OnboardingScreen() {
       <div className="flex flex-col gap-3 w-full mb-10">
         {[
           { n: '1', color: 'bg-primary', text: 'Prends en photo tes vêtements' },
-          { n: '2', color: 'bg-secondary', text: "Compose une tenue, l'IA l'analyse" },
-          { n: '3', color: 'bg-accent', text: 'Vois le résultat sur toi en photo' },
+          { n: '2', color: 'bg-secondary', text: "L'IA t'aide à choisir une tenue stylée" },
+          { n: '3', color: 'bg-accent', text: 'Vois le résultat sur toi en photo avant de t\'habiller' },
         ].map((step) => (
           <div
             key={step.n}

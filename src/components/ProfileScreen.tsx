@@ -9,6 +9,13 @@ interface Props {
   gender: string;
   onGenderChange: (g: string) => void;
 }
+/*----------------------------------------------------------------*
+  On garde les noms (gender) mais dans l'idée on change pour photo : 
+  -de face
+  -de dos
+  -de profil
+  (pour éviter les stéréotypes et mieux coller à la réalité de chacun)
+-----------------------------------------------------------------*/
 
 export default function ProfileScreen({ gender: genderProp, onGenderChange }: Props) {
   const { user, signOut } = useAuth();
@@ -121,9 +128,9 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
         {/* Gender */}
         <div className="flex gap-1.5 mb-3">
           {[
-            { key: 'female', label: '👩 Femme' },
-            { key: 'male', label: '👨 Homme' },
-            { key: 'neutral', label: '🧑 Neutre' },
+            { key: 'female', label: 'de face' },
+            { key: 'male', label: 'de profil' },
+            { key: 'neutral', label: 'de dos' },
           ].map(g => (
             <button key={g.key} onClick={() => setGender(g.key)}
               className={`flex-1 py-2 rounded-lg text-[11px] font-semibold transition-all ${
