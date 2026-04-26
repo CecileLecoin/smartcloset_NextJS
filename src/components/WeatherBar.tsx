@@ -20,6 +20,7 @@ export default function WeatherBar({
 }) {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [season, setSeason] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true); // Placeholder for loading state if needed
 
     ///////Fallback saisons
     function inferSeasonFromDate(): "spring" | "summer" | "autumn" | "winter" {
@@ -39,6 +40,7 @@ export default function WeatherBar({
         })
         .then(data => {
           setWeather(data);
+          setLoading(false);
 
 
         onWeatherChange?.({
@@ -52,7 +54,14 @@ export default function WeatherBar({
       .catch(console.error);
   }, []);
 
-  if (!weather) {
+    if (loading) {
+    return (
+      <div className="text-xs text-dim px-5 py-3">
+        🌦️ Chargement de la météo en cours...
+      </div>
+    );
+  }
+  if (!weather && !loading) {
     return (
       <div className="text-xs text-dim px-5 py-3">
         🌦️ Météo indisponible – affichage par défaut
