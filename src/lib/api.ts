@@ -6,7 +6,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
     const { data } = await supabase.auth.getSession();
     if (data.session?.access_token) {
-      return { Authorization: `Bearer ${data.session.access_token}`, caches: 'no-cache' };
+      return { Authorization: `Bearer ${data.session.access_token}`, cache: 'no-cache' };
     }
   } catch {}
   return {};
@@ -49,5 +49,6 @@ export async function apiPost<T = any>(
     method: 'POST',
     body: isFormData ? body : JSON.stringify(body),
     headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+    cache: 'no-cache',
   });
 }
