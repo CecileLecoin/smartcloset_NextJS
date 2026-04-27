@@ -6,7 +6,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
     const { data } = await supabase.auth.getSession();
     if (data.session?.access_token) {
-      return { Authorization: `Bearer ${data.session.access_token}` };
+      return { Authorization: `Bearer ${data.session.access_token}`, caches: 'no-cache' };
     }
   } catch {}
   return {};
@@ -25,6 +25,7 @@ export async function apiFetch<T = any>(
         ...authHeaders,
         ...options?.headers,
       },
+      cache: 'no-cache',
     });
   } catch (e) {
     console.warn(`[API] Backend unreachable for ${path}`);
