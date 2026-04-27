@@ -7,7 +7,9 @@ if (!supabaseUrl || !supabaseKey) {
   console.warn('[FitLab] Supabase not configured — set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local');
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseKey || '');
+export const supabase = createClient(
+  supabaseUrl || '', 
+  supabaseKey || '');
 
 // ── Helper: get current user ID ──────────────────────────────
 export async function getUserId(): Promise<string | null> {
