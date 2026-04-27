@@ -11,7 +11,6 @@ import ProfileScreen from '@/components/ProfileScreen';
 import ToastContainer from '@/components/Toast';
 import type { OutfitItem, TryOnResult, WeatherInfo } from '@/lib/types';
 import WeatherBar from '@/components/WeatherBar';
-import { serverFetch } from '@/lib/serverFetch';
 
 type Tab = 'wardrobe' | 'tryon' | 'history' | 'profile';
 
@@ -22,7 +21,7 @@ const TABS: { id: Tab; icon: typeof Shirt; label: string }[] = [
   { id: 'profile', icon: User, label: 'Profil' },
 ];
 
-export default async function Home() {
+export default function Home() {
   const { user, loading: authLoading, isGuest } = useAuth();
   const [tab, setTab] = useState<Tab>('wardrobe');
   const [outfit, setOutfit] = useState<OutfitItem[]>([]);
@@ -39,7 +38,7 @@ export default async function Home() {
 
   console.log('API URL =', process.env.NEXT_PUBLIC_API_URL)
 
-  const res = await serverFetch(process.env.NEXT_PUBLIC_API_URL!);
+
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('fitlab_history') || '[]');

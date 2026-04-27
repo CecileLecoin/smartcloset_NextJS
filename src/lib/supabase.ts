@@ -9,7 +9,8 @@ if (!supabaseUrl || !supabaseKey) {
 
 export const supabase = createClient(
   supabaseUrl || '', 
-  supabaseKey || '');
+  supabaseKey || '',
+  );
 
 // ── Helper: get current user ID ──────────────────────────────
 export async function getUserId(): Promise<string | null> {
