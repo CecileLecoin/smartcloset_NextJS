@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
 };
 export const dynamic = 'force-dynamic';
+// Source - https://stackoverflow.com/a/77945068
+// Posted by Kelvin, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-04-27, License - CC BY-SA 4.0
+
+export const fetchCache = 'force-no-store';
+
 
 export const viewport: Viewport = {
   width: 'device-width',

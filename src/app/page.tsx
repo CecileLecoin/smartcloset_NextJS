@@ -13,6 +13,12 @@ import type { OutfitItem, TryOnResult, WeatherInfo } from '@/lib/types';
 import WeatherBar from '@/components/WeatherBar';
 
 type Tab = 'wardrobe' | 'tryon' | 'history' | 'profile';
+// Source - https://stackoverflow.com/a/77945068
+// Posted by Kelvin, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-04-27, License - CC BY-SA 4.0
+
+export const fetchCache = 'force-no-store';
+
 
 const TABS: { id: Tab; icon: typeof Shirt; label: string }[] = [
   { id: 'wardrobe', icon: Shirt, label: 'Garde-robe' },
