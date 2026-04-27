@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { AuthProvider } from '@/lib/auth';
 import '@/styles/globals.css';
+import Refresh from '@/lib/Refresh';
 
 export const metadata: Metadata = {
   title: 'FitLab — Essayage virtuel IA',
@@ -24,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="bg-bg min-h-screen">
+        <Refresh />
         <AuthProvider>
           {children}
         </AuthProvider>
