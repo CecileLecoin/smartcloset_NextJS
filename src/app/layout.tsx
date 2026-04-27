@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   description: 'Essaye ta garde-robe sur toi. Découvre de nouveaux looks.',
   manifest: '/manifest.json',
 };
+export const dynamic = 'force-dynamic';
 
 export const viewport: Viewport = {
   width: 'device-width',
