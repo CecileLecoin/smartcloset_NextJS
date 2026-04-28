@@ -11,6 +11,7 @@ import ProfileScreen from '@/components/ProfileScreen';
 import ToastContainer from '@/components/Toast';
 import type { OutfitItem, TryOnResult, WeatherInfo } from '@/lib/types';
 import WeatherBar from '@/components/WeatherBar';
+import Refresh from '@/lib/Refresh';
 
 type Tab = 'wardrobe' | 'tryon' | 'history' | 'profile';
 // Source - https://stackoverflow.com/a/77945068
@@ -105,7 +106,7 @@ export default function Home() {
           <p className="text-sm text-dim">Chargement…</p>
           <p>If the page doesn't load, please press this button :</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => Refresh()}
             className="mt-4 px-5 py-2 rounded-lg text-sm font-semibold
               bg-card border border-border text-primary
               hover:bg-border transition"
