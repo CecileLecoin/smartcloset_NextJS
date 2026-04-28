@@ -14,7 +14,12 @@ export const dynamic = 'force-dynamic';
 // Retrieved 2026-04-27, License - CC BY-SA 4.0
 
 export const dynamicParams = true
-export const revalidate = false
+// Source - https://stackoverflow.com/a/79344688
+// Posted by Sourabh Chavan
+// Retrieved 2026-04-28, License - CC BY-SA 4.0
+
+export const revalidate = 3600;
+
 
 export const fetchCache = 'force-no-store';
 
