@@ -249,13 +249,43 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
     ? findSuggestedGarments(items, currentOutfit)
     : {};
 
-/////////////////////////////////////////////////////////////UI attente de l'analyse///////////////////////////////
+/////////////////////////////////////////////////////////////UI de l'analyse///////////////////////////////
+//compresser la photo avant upload pour éviter les problèmes de mémoire et accélérer l'upload (surtout sur mobile)
+async function compressImage(
+  file: File,
+  maxWidth = 1024,
+  quality = 0.7
+): Promise<File> {
+  const img = document.createElement('img');
+  img.src = URL.createObjectURL(file);
+
+  await new Promise(resolve => (img.onload = resolve));
+
+  const ratio = img.width / img.height;
+  const canvas = document.createElement('canvas');
+  canvas.width = maxWidth;
+  canvas.height = maxWidth / ratio;
+
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  return new Promise(resolve => {
+    canvas.toBlob(blob => {
+      resolve(
+        new File([blob!], file.name, { type: 'image/jpeg' })
+      );
+    }, 'image/jpeg', quality);
+  });
+}
   async function handleUpload(files: FileList | null) {
     if (!files?.length) return;
 
 
     setUploading(true);
     setUploadProgress('Préparation des images…');
+    
+    
+
 
     try {
       // On traite les fichiers un par un (plus stable mobile)
@@ -264,7 +294,14 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
 
         const token = localStorage.getItem('token');
         const fd = new FormData();
-        fd.append('file', file);
+        //fd.append('file', file);
+        const compressed = await compressImage(file);
+
+        console.log(
+          '📉 Taille après compression:',
+          Math.round(compressed.size / 1024) + ' Ko'
+        );
+        fd.append('file', compressed);
         fd.append('remove_bg', 'true');
 
         // 1️⃣ Lancer l’analyse (réponse immédiate)
