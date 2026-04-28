@@ -261,6 +261,7 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
       for (const file of Array.from(files)) {
         setUploadProgress(`Analyse de ${file.name}…`);
 
+        const token = localStorage.getItem('token');
         const fd = new FormData();
         fd.append('file', file);
         fd.append('remove_bg', 'true');
@@ -269,6 +270,7 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
         const res = await apiFetch<{ job_id: string }>('/api/analyze', {
           method: 'POST',
           body: fd,
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
         const jobId = res.job_id;

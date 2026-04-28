@@ -65,6 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
 
+      
+    // ✅ get the access token and store it in localStorage for API calls
+    if (session?.access_token) {
+      localStorage.setItem('token', session.access_token);
+    }
+
+
       if (session?.user?.id) {
         await loadProfileFlags(session.user.id);
       } else {
@@ -127,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    localStorage.removeItem('token'); // ✅ TRÈS IMPORTANT
   }
 
   /*------------- GUEST MODE -------------*/
