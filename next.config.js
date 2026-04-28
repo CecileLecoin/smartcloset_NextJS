@@ -11,23 +11,23 @@ const nextConfig = {
   reactStrictMode: true,
 
   // ✅ Désactiver le cache HTTP côté navigateur / CDN
-  async headers() {
+   /* async headers() {
     return [
       {
         
         source: "/(.*)",
           headers: [
-            /* {
+             {
               key: "Cache-Control",
               value: "no-store, no-cache, must-revalidate, proxy-revalidate",
             },
             { key: "Pragma", value: "no-cache" },
-            { key: "Expires", value: "0" }, */
+            { key: "Expires", value: "0" }, 
           ],
 
         },
     ];
-  },
+  },*/
 
   // ✅ Images
   images: {
