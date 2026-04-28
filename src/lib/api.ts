@@ -12,31 +12,33 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return {};
 }
 
-export async function apiFetch<T = any>(
-  path: string,
-  options?: RequestInit
+export async function apiFetch<T>(
+  url: string,
+  options: RequestInit = {}
 ): Promise<T> {
-  const authHeaders = await getAuthHeaders();
-  let res: Response;
-  try {
-    res = await fetch(`${API}${path}`, {
-      ...options,
-      headers: {
-        ...authHeaders,
-        ...options?.headers,
-      },
-      cache: 'no-cache',
-    });
-  } catch (e) {
-    console.warn(`[API] Backend unreachable for ${path}`);
-    throw new Error('Backend indisponible — lance le serveur Python sur le port 8000');
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('token')
+      : null;
+
+  const headers = new Headers(options.headers || {});
+
+  // ✅ Ajout du token UNIQUEMENT s’il existe
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include', // ✅ utile si cookies / auth serveur
+  });
+
   if (!res.ok) {
     const text = await res.text();
-    let detail = text;
-    try { detail = JSON.parse(text).detail || text; } catch {}
-    throw new Error(detail);
+    throw new Error(text || `API error ${res.status}`);
   }
+
   return res.json();
 }
 
