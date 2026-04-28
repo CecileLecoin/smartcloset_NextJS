@@ -12,6 +12,7 @@ import ToastContainer from '@/components/Toast';
 import type { OutfitItem, TryOnResult, WeatherInfo } from '@/lib/types';
 import WeatherBar from '@/components/WeatherBar';
 import Refresh from '@/lib/Refresh';
+import { useRouter } from "next/navigation";
 
 type Tab = 'wardrobe' | 'tryon' | 'history' | 'profile';
 // Source - https://stackoverflow.com/a/77945068
@@ -38,6 +39,7 @@ export default function Home() {
   const [showPhotoBubble, setShowPhotoBubble] = useState(false);
   const { signOut } = useAuth()
 
+  const router = useRouter();
   
   const canAddGarment   = !isGuest;
   const canEditProfile = !isGuest;
@@ -60,6 +62,7 @@ export default function Home() {
   }, [user]);
 
   const [currentWeather, setCurrentWeather] = useState<WeatherInfo | null>(null);
+  
 
   function dismissPhotoBubble() {
     setShowPhotoBubble(false);
@@ -106,7 +109,7 @@ export default function Home() {
           <p className="text-sm text-dim">Chargement…</p>
           <p>If the page doesn't load, please press this button :</p>
           <button
-            onClick={() => window.location.href = `/?t=${Date.now()}`}
+            onClick={() => router.replace(`?t=${Date.now()}`)}
             className="mt-4 px-5 py-2 rounded-lg text-sm font-semibold
               bg-card border border-border text-primary
               hover:bg-border transition"
