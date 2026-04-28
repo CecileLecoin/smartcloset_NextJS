@@ -320,10 +320,15 @@ async function compressImage(
       // 3️⃣ Rafraîchir la garde‑robe UNE FOIS TOUT FINI
       await loadWardrobe();
 
-    } catch (e: any) {
-      console.error(e);
-      alert('Erreur pendant l’analyse du vêtement');
-    } finally {
+    } catch (e) {
+        console.warn('Analyse toujours en cours côté serveur', e);
+
+        setUploadProgress(
+          'Analyse toujours en cours… Le résultat apparaîtra automatiquement.'
+        );
+
+        return; // ⛔ ne PAS bloquer l’utilisateur
+      } finally {
       setUploading(false);
       setUploadProgress(null);
     }
