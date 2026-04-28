@@ -218,7 +218,6 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
   }, []);
 
   useEffect(() => {
-    if (loading) return; // ⛔ tant que l’auth n’est pas prête
     loadWardrobe();
   }, [loadWardrobe]);
 
@@ -227,7 +226,6 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
 
   useEffect(() => {
     async function fetchOutfitOfTheDay() {
-      if (loading) return;
       setLoadingOutfit(true);
       try {
         const res = await apiFetch<{ outfits: ClaudeOutfit[] }>(
@@ -254,12 +252,6 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
 /////////////////////////////////////////////////////////////UI attente de l'analyse///////////////////////////////
   async function handleUpload(files: FileList | null) {
     if (!files?.length) return;
-
-    
-    if (loading) {
-        alert("Session en cours d'initialisation, réessaie dans un instant");
-        return;
-      }
 
 
     setUploading(true);
