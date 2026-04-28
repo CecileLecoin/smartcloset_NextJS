@@ -97,7 +97,7 @@ export default function Home() {
   function goToTryOn() { setAutoTry(true); setTab('tryon'); }
 
   // Loading state
-  if (authLoading) {
+  /* if (authLoading) {
     return (
       <div className="max-w-lg mx-auto h-screen flex items-center justify-center bg-bg">
         <div className="text-center">
@@ -106,7 +106,7 @@ export default function Home() {
         </div>
       </div>
     );
-  }
+  } */
 
   // Not logged in → onboarding
   if (!user) {
