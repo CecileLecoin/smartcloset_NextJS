@@ -97,6 +97,12 @@ export default function Home() {
 
   function goToTryOn() { setAutoTry(true); setTab('tryon'); }
 
+  function hardRefresh() {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.reload();
+  }
+
   // Loading state
    if (authLoading) {
     return (
@@ -104,9 +110,9 @@ export default function Home() {
         <div className="text-center">
           <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-dim">Chargement…</p>
-          <p>If the page doesn't load, please press this button :</p>
+          <p>If the page doesn't load after 5 seconds, please press this button :</p>
           <button
-            onClick={() => window.location.replace(`/?t=${Date.now()}`)}
+            onClick={() => hardRefresh()}
             className="mt-4 px-5 py-2 rounded-lg text-sm font-semibold
               bg-card border border-border text-primary
               hover:bg-border transition"
