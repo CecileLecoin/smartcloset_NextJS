@@ -177,7 +177,7 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  //const [uploading, setUploading] = useState(false);
   const [filter, setFilter] = useState('all');
 
   const [search, setSearch] = useState('');
@@ -188,6 +188,9 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
   const [detailItem, setDetailItem] = useState<WardrobeItem | null>(null);
   const [showImport, setShowImport] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
     /* ----------- WEATHER ----------- */
 
@@ -246,25 +249,62 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
     ? findSuggestedGarments(items, currentOutfit)
     : {};
 
-
+/////////////////////////////////////////////////////////////UI attente de l'analyse///////////////////////////////
   async function handleUpload(files: FileList | null) {
     if (!files?.length) return;
+
     setUploading(true);
+    setUploadProgress('Préparation des images…');
+
     try {
+      // On traite les fichiers un par un (plus stable mobile)
       for (const file of Array.from(files)) {
+        setUploadProgress(`Analyse de ${file.name}…`);
+
         const fd = new FormData();
         fd.append('file', file);
-        await apiFetch('/api/analyze', { method: 'POST', body: fd });
+        fd.append('remove_bg', 'true');
+
+        // 1️⃣ Lancer l’analyse (réponse immédiate)
+        const res = await apiFetch<{ job_id: string }>('/api/analyze', {
+          method: 'POST',
+          body: fd,
+        });
+
+        const jobId = res.job_id;
+
+        // 2️⃣ Attendre la fin du job IA (polling)
+        await waitForAnalyzeJob(jobId);
       }
+
+      // 3️⃣ Rafraîchir la garde‑robe UNE FOIS TOUT FINI
       await loadWardrobe();
+
     } catch (e: any) {
-      alert('Erreur: ' + e.message);
+      console.error(e);
+      alert('Erreur pendant l’analyse du vêtement');
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   }
 
-  
+  async function waitForAnalyzeJob(jobId: string, intervalMs = 2000) {
+    while (true) {
+      const status = await apiFetch<any>(`/api/analyze/status/${jobId}`);
+
+      if (status.status === 'done') {
+        return status;
+      }
+
+      if (status.status === 'error') {
+        throw new Error(status.error || 'Erreur analyse IA');
+      }
+
+      await new Promise(res => setTimeout(res, intervalMs));
+    }
+  }
+  ///////////////////////////////////////////////////////////////////////////////////////
 
   const filtered = items.filter(item => {
   // 1️⃣ Catégorie
@@ -630,7 +670,10 @@ export default function WardrobeScreen({ outfit, onToggleOutfit, onGoTryOn }: Pr
       {uploading && (
         <div className="fixed inset-0 bg-dark/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-card rounded-2xl p-6 text-center shadow-elevated">
-            <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+            <div className="relative w-12 h-12 mx-auto mb-4">
+              <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+              <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            </div>
             <p className="text-sm font-semibold">Analyse en cours…</p>
             <p className="text-xs text-dim mt-1">Claude Vision analyse vos vêtements</p>
           </div>
