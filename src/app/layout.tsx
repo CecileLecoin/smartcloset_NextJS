@@ -18,7 +18,7 @@ export const dynamicParams = true
 // Posted by Sourabh Chavan
 // Retrieved 2026-04-28, License - CC BY-SA 4.0
 
-export const revalidate = 3600;
+export const revalidate = false;
 
 
 export const fetchCache = 'force-no-store';
@@ -40,8 +40,9 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="bg-bg min-h-screen">
-        <Refresh />
+        
         <AuthProvider>
+          <Refresh />
           {children}
         </AuthProvider>
       </body>
