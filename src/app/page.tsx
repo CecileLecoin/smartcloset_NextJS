@@ -106,7 +106,7 @@ export default function Home() {
           <p className="text-sm text-dim">Chargement…</p>
           <p>If the page doesn't load, please press this button :</p>
           <button
-            onClick={() => Refresh()}
+            onClick={() => window.location.href = window.location.pathname}
             className="mt-4 px-5 py-2 rounded-lg text-sm font-semibold
               bg-card border border-border text-primary
               hover:bg-border transition"
