@@ -47,10 +47,24 @@ export async function apiPost<T = any>(
   body: FormData | Record<string, any>
 ): Promise<T> {
   const isFormData = body instanceof FormData;
+
+  // ✅ récupérer le token (à adapter selon ton auth)
+  const token = localStorage.getItem('access_token');
+
+  const headers: Record<string, string> = {};
+
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   return apiFetch<T>(path, {
     method: 'POST',
     body: isFormData ? body : JSON.stringify(body),
-    headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+    headers,
     cache: 'no-cache',
   });
 }
