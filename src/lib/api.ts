@@ -66,10 +66,13 @@ export async function apiPost<T = any>(
   });
 }
 
+
 export async function apiGet<T>(url: string): Promise<T> {
-  const token = localStorage.getItem('access_token');
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
 
   const res = await fetch(url, {
+    method: 'GET',
     credentials: 'include',
     headers: token
       ? { Authorization: `Bearer ${token}` }
@@ -83,3 +86,4 @@ export async function apiGet<T>(url: string): Promise<T> {
 
   return res.json() as Promise<T>;
 }
+
