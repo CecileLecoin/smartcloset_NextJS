@@ -67,8 +67,14 @@ export async function apiPost<T = any>(
 }
 
 export async function apiGet<T>(url: string): Promise<T> {
+  const token = localStorage.getItem('access_token');
+
   const res = await fetch(url, {
     credentials: 'include',
+    headers: token
+      ? { Authorization: `Bearer ${token}` }
+      : {},
+    cache: 'no-cache',
   });
 
   if (!res.ok) {
