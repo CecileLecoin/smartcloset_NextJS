@@ -42,24 +42,21 @@ export async function apiFetch<T>(
   return res.json();
 }
 
+
+
 export async function apiPost<T = any>(
   path: string,
   body: FormData | Record<string, any>
 ): Promise<T> {
   const isFormData = body instanceof FormData;
 
-  // ✅ récupérer le token (à adapter selon ton auth)
-  const token = localStorage.getItem('access_token');
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
 
   const headers: Record<string, string> = {};
 
-  if (!isFormData) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+  if (!isFormData) headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   return apiFetch<T>(path, {
     method: 'POST',
