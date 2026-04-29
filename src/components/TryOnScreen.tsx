@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Heart, Download, RotateCcw } from 'lucide-react';
-import { apiPost } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
 import type { OutfitItem, TryOnResult, WeatherInfo } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 
@@ -16,6 +16,21 @@ interface Props {
   autoTry?: boolean;
   weather: WeatherInfo | null; // ✅ AJOUT
 }
+
+type TryOnJobStatus = 
+  | {
+      status: 'pending'
+    }
+  | {
+      status: 'done'
+      render_url: string
+      cached?: boolean
+    }
+  | {
+      status: 'error'
+      error: string
+    }
+
 
 export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gender, autoTry, weather }: Props) {
   const [loading, setLoading] = useState(false);
@@ -53,70 +68,68 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
 
   async function handleTryOn() {
     if (!outfit.length) return;
+
     setLoading(true);
     setProgress(10);
     setResultUrl(null);
+    setSaved(false);
 
-    const tick = setInterval(() => setProgress(p => Math.min(p + 3, 90)), 800);
+    // Fake progress (UI)
+    const tick = setInterval(
+      () => setProgress(p => Math.min(p + 3, 90)),
+      800
+    );
 
     try {
       const fd = new FormData();
       fd.append('garment_ids', JSON.stringify(outfit.map(o => o.id)));
-      fd.append('morphology', 'X');
       fd.append('gender', gender);
 
-      const data = await apiPost<{ success: boolean; render_url: string; cached?: boolean }>('/api/tryon', fd);
+      // ✅ 1. Lancer le job (rapide)
+      const data = await apiPost<{
+        success: boolean;
+        job_id: string;
+        status: string;
+      }>('/api/tryon', fd);
+
       if (!data.success) throw new Error('Erreur essayage');
 
-      clearInterval(tick);
-      setProgress(100);
-      setResultUrl(`${data.render_url}?t=${Date.now()}`);
-      setSaved(false);
+      const jobId = data.job_id;
 
-      const label = outfit.map(o => o.analysis?.type || 'vêtement').join(' + ');
-      // onResult({
-      //   url: data.render_url,
-      //   label: outfit.length === 1 ? (outfit[0].analysis?.type || 'Tenue') : `${outfit.length} pièces`,
-      //   fullLabel: label,
-      //   items: outfit,
-      //   ts: Date.now(),
-      // });
+      // ✅ 2. Polling
+      const pollInterval = 1500;
+      const maxDuration = 60_000; // 60s sécurité
+      const start = Date.now();
+
+      while (true) {
+        await new Promise(r => setTimeout(r, pollInterval));
+
+        const job = await apiGet<TryOnJobStatus>(
+          `/api/tryon/status/${jobId}`
+        );
+
+        if (job.status === 'done') {
+          clearInterval(tick);
+          setProgress(100);
+
+          setResultUrl(`${job.render_url}?t=${Date.now()}`);
+          return;
+        }
+
+        if (job.status === 'error') {
+          throw new Error(job.error || 'Erreur try-on');
+        }
+
+        if (Date.now() - start > maxDuration) {
+          throw new Error('Essayage trop long, réessaie plus tard');
+        }
+      }
     } catch (e: any) {
       alert('Erreur: ' + e.message);
     } finally {
       clearInterval(tick);
       setLoading(false);
     }
-  }
-
-  async function handleSaveResult() {
-    if (isGuest) return; // 🔒 sécurité
-    if (!resultUrl || saved) return;
-
-    const label = outfit.map(o => o.analysis?.type || 'vêtement').join(' + ');
-
-    onResult({
-      url: resultUrl,
-      label:
-        outfit.length === 1
-          ? (outfit[0].analysis?.type || 'Tenue')
-          : `${outfit.length} pièces`,
-      fullLabel: label,
-      items: outfit,
-      ts: Date.now(),
-    });
-
-    const fd = new FormData();
-    fd.append('render_url', resultUrl);
-    fd.append('garment_ids', JSON.stringify(outfit.map(o => o.id)));
-    const data = await apiPost<{ success: boolean; render_url: string; garment_ids: string}>('/api/save_tryon', fd);
-    if (!data.success) throw new Error('Erreur enregistrement');
-    
-    // ✅ 1. Remplacer l'image par l'URL finale (bucket)
-    setResultUrl(data.render_url);
-
-    setSaved(true);
-
   }
 
   // Propose sharing the result (mobile Web Share API or fallback)
@@ -164,6 +177,38 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
       proposeShare(file);
 
     } catch {}
+
+    
+  }
+
+  async function handleSaveResult() {
+    if (isGuest) return; // 🔒 sécurité
+    if (!resultUrl || saved) return;
+
+    const label = outfit.map(o => o.analysis?.type || 'vêtement').join(' + ');
+
+    onResult({
+      url: resultUrl,
+      label:
+        outfit.length === 1
+          ? (outfit[0].analysis?.type || 'Tenue')
+          : `${outfit.length} pièces`,
+      fullLabel: label,
+      items: outfit,
+      ts: Date.now(),
+    });
+
+    const fd = new FormData();
+    fd.append('render_url', resultUrl);
+    fd.append('garment_ids', JSON.stringify(outfit.map(o => o.id)));
+    const data = await apiPost<{ success: boolean; render_url: string; garment_ids: string}>('/api/save_tryon', fd);
+    if (!data.success) throw new Error('Erreur enregistrement');
+    
+    // ✅ 1. Remplacer l'image par l'URL finale (bucket)
+    setResultUrl(data.render_url);
+
+    setSaved(true);
+
   }
 
   const emptySlots = Math.max(0, 4 - outfit.length);
