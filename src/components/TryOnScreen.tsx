@@ -279,6 +279,9 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
             <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
             <p className="text-xs font-semibold text-dim">Essayage en cours…</p>
             <p className="text-[10px] text-dim">~15-30 secondes</p>
+            <p className="text-[10px] text-dim mt-2 text-center">
+              💡 Astuce : appuie sur "sauver" pour conserver ton essayage dans l'historique
+            </p>
             <div className="w-48 h-1 rounded-full bg-border overflow-hidden">
               <div className="h-full rounded-full transition-all duration-500"
                    style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #FF6B8A, #7C5CFC)' }} />

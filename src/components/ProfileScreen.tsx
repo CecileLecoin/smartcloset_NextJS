@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Camera, ChevronRight, Palette, Upload, LogOut, AlertCircle, Moon, Sun } from 'lucide-react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, apiGet, apiPost } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
 interface Props {
@@ -44,7 +44,8 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
 
   async function loadBasePhoto() {
     try {
-      const data = await apiFetch<{ url: string | null }>(
+
+      const data = await apiGet<{ url: string | null }>(
         `/api/base-model?morphology=X&gender=${gender}`
       );
 
@@ -69,7 +70,7 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
       fd.append('file', files[0]);
       fd.append('morphology', 'X');
       fd.append('gender', gender);
-      await apiFetch('/api/upload-base-model', { method: 'POST', body: fd });
+      await apiPost('/api/upload-base-model', fd);
       await loadBasePhoto();
     } catch (e: any) { alert('Erreur: ' + e.message); }
     finally { setUploading(false); }
@@ -77,7 +78,7 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
 
   async function handleExport() {
     try {
-      const data = await apiFetch<{ items: any[] }>('/api/wardrobe');
+      const data = await apiGet<{ items: any[] }>('/api/wardrobe');
       const json = JSON.stringify(data.items, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
