@@ -186,8 +186,10 @@ export default function TryOnScreen({ outfit, onRemove, onResult, onAddMore, gen
     if (!resultUrl || saved) return;
 
     const label = outfit.map(o => o.analysis?.type || 'vêtement').join(' + ');
+    const id = "000001"; // ID temporaire pour l'UI, remplacé par le backend après enregistrement
 
     onResult({
+      id: id, // will be replaced by backend ID
       url: resultUrl,
       label:
         outfit.length === 1

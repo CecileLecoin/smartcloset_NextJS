@@ -32,6 +32,7 @@ export interface OutfitItem {
 }
 
 export interface TryOnResult {
+  id: string;
   url: string;
   label: string;
   fullLabel: string;

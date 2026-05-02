@@ -87,3 +87,27 @@ export async function apiGet<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function apiDelete<T = any>(url: string): Promise<T> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+
+  const res = await fetch(url, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: token
+      ? { Authorization: `Bearer ${token}` }
+      : {},
+    cache: 'no-cache',
+  });
+
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+
+  // Certains DELETE renvoient rien
+  try {
+    return (await res.json()) as T;
+  } catch {
+    return {} as T;
+  }
+}

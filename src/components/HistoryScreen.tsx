@@ -3,6 +3,8 @@
 import { Trash2 } from 'lucide-react';
 import type { TryOnResult } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
+import { useEffect, useState } from 'react';
+import { apiGet, apiDelete } from '@/lib/api';
 
 interface Props {
   history: TryOnResult[];
@@ -10,6 +12,46 @@ interface Props {
 }
 
 function timeAgo(ts: number): string {
+
+  const [history, setHistory] = useState<TryOnResult[]>([]);
+
+  useEffect(() => {
+    async function loadHistory() {
+      const data = await apiGet<{ items: any[] }>('/api/tryons');
+
+      setHistory(
+        data.items.map(item => {
+          const label =
+            item.garment_ids?.length === 1
+              ? item.garment_ids[0]?.analysis?.type ?? 'Tenue'
+              : `${item.garment_ids.length} pièces`;
+
+          const fullLabel = item.garment_ids
+            ?.map((g: any) => g.analysis?.type || 'vêtement')
+            .join(' + ');
+
+          return {
+            id: item.id,
+            url: item.render_url,
+            items: item.garment_ids,
+            ts: new Date(item.created_at).getTime(),
+            label,
+            fullLabel,
+          };
+        })
+      );
+    }
+
+    loadHistory();
+  }, []);
+
+  async function handleDelete(idx: number) {
+    const toDelete = history[idx];
+
+    await apiDelete(`/api/tryons/${toDelete.id}`);
+
+    setHistory(h => h.filter((_, i) => i !== idx));
+  }
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "À l'instant";
