@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
-  isGuest: true,
+  isGuest: false,
   signInWithGoogle: async () => {},
   signInAsGuest: async () => {},
   signUpWithEmail: async () => {},
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isGuest, setIsGuest] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -145,10 +145,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('id', userId)
       .single();
 
+    
     if (error) {
-      console.error('Failed to load profile flags', error);
-      return;
-    }
+        console.warn('No profile row, defaulting to non-guest');
+        setIsGuest(false);          // ✅ IMPORTANT
+        return;
+      }
+
 
     setIsGuest(data?.is_guest === true);
   }
