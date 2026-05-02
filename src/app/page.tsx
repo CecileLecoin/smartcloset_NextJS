@@ -151,7 +151,7 @@ export default function Home() {
         {tab === 'tryon' && (
           <TryOnScreen outfit={outfit} onRemove={removeFromOutfit} onResult={addToHistory} onAddMore={() => setTab('wardrobe')} gender={gender} autoTry={autoTry} weather={currentWeather} />
         )}
-        {tab === 'history' && <HistoryScreen history={history} onDelete={deleteFromHistory} />}
+        {tab === 'history' && <HistoryScreen />}
         {tab === 'profile' && (
           canEditProfile ? (
             <ProfileScreen
