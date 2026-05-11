@@ -36,53 +36,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
-    const loadSession = async () => {
-    const { data, error } = await supabase.auth.getSession();
-
-    if (error) {
-      console.error('getSession error', error);
-      setLoading(false);
-      return;
-    }
-
-    const session = data.session;
-    setSession(session);
-    setUser(session?.user ?? null);
-
-    if (session?.user?.id) {
-      await loadProfileFlags(session.user.id);
-    } else {
-      setIsGuest(false);
-    }
-
-    setLoading(false);
-  };
-
-  loadSession();
-
-  const { data: { subscription } } =
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      
-    // ✅ get the access token and store it in localStorage for API calls
-    if (session?.access_token) {
-      localStorage.setItem('token', session.access_token);
-    }
-
-
-      if (session?.user?.id) {
-        await loadProfileFlags(session.user.id);
-      } else {
-        setIsGuest(false);
+    // Lecture du localStorage — quasi-instantané, évite le chargement infini
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      if (data.session?.access_token) {
+        localStorage.setItem('token', data.session.access_token);
       }
-
       setLoading(false);
-    });
+      if (data.session?.user?.id) {
+        loadProfileFlags(data.session.user.id);
+      }
+    }).catch(() => setLoading(false));
 
-  return () => subscription.unsubscribe();
-}, []);
+    // Changements ultérieurs (connexion, déconnexion, refresh token…)
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.access_token) {
+          localStorage.setItem('token', session.access_token);
+        }
+        if (session?.user?.id) {
+          loadProfileFlags(session.user.id);
+        } else {
+          setIsGuest(false);
+        }
+      });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
 
   async function signInWithGoogle() {
