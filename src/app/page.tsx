@@ -36,6 +36,7 @@ export default function Home() {
   const [gender, setGender] = useState('female');
   const [autoTry, setAutoTry] = useState(false);
   const [showPhotoBubble, setShowPhotoBubble] = useState(false);
+  const [showSignupConfirmPopup, setShowSignupConfirmPopup] = useState(false);
   const { signOut } = useAuth()
 
   
@@ -56,6 +57,10 @@ export default function Home() {
   useEffect(() => {
     if (user && !localStorage.getItem('fitlab_photo_hint')) {
       setShowPhotoBubble(true);
+    }
+    if (user && localStorage.getItem('fitlab_signup_confirm_pending') === '1') {
+      setShowSignupConfirmPopup(true);
+      localStorage.removeItem('fitlab_signup_confirm_pending');
     }
   }, [user]);
 
@@ -139,6 +144,25 @@ export default function Home() {
 
   return (
     <div className="max-w-lg mx-auto h-screen flex flex-col bg-bg relative overflow-hidden">
+      {showSignupConfirmPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-6">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-xl flex flex-col items-center gap-4">
+            <div className="text-5xl">📧</div>
+            <h2 className="text-xl font-extrabold text-dark">Vérifie ta boîte mail</h2>
+            <p className="text-sm text-dim leading-relaxed">
+              Un lien de confirmation t'a été envoyé par email.
+              <br /><br />
+              Clique sur le lien reçu pour activer ton compte.
+            </p>
+            <button
+              onClick={() => setShowSignupConfirmPopup(false)}
+              className="w-full py-3 rounded-xl font-semibold bg-primary text-white mt-2"
+            >
+              OK, compris !
+            </button>
+          </div>
+        </div>
+      )}
       <div  hidden>
         {/* ✅ TOUJOURS monté mais caché*/}
         <WeatherBar onWeatherChange={setCurrentWeather} />

@@ -11,7 +11,6 @@ export default function OnboardingScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [showEmailConfirmPopup, setShowEmailConfirmPopup] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: boolean; password?: boolean }>({});
 
   return (
@@ -19,25 +18,6 @@ export default function OnboardingScreen() {
       className="h-full flex flex-col items-center justify-center px-8 text-center"
       style={{ background: 'linear-gradient(160deg, #FFF5F7 0%, #F5F0FF 50%, #EDFFF9 100%)' }}
     >
-      {showEmailConfirmPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-6">
-          <div className="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-xl flex flex-col items-center gap-4">
-            <div className="text-5xl">📧</div>
-            <h2 className="text-xl font-extrabold text-dark">Vérifie ta boîte mail</h2>
-            <p className="text-sm text-dim leading-relaxed">
-              Un lien de confirmation a été envoyé à <span className="font-semibold text-dark">{email}</span>.
-              <br /><br />
-              Clique sur le lien reçu pour activer ton compte avant de te connecter.
-            </p>
-            <button
-              onClick={() => { setShowEmailConfirmPopup(false); setMode('none'); }}
-              className="w-full py-3 rounded-xl font-semibold bg-primary text-white mt-2"
-            >
-              OK, compris !
-            </button>
-          </div>
-        </div>
-      )}
       <div className="text-7xl mb-6 drop-shadow-lg">👗</div>
 
       <h1 className="text-4xl font-extrabold tracking-tight mb-1">
@@ -156,7 +136,7 @@ export default function OnboardingScreen() {
               try {
                 if (mode === 'signup') {
                   await signUpWithEmail(email, password);
-                  setShowEmailConfirmPopup(true);
+                  localStorage.setItem('fitlab_signup_confirm_pending', '1');
                 } else {
                   await signInWithEmail(email, password);
                 }
