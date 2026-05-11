@@ -114,8 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithEmail(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    if (data.user && !data.user.email_confirmed_at) {
+      await supabase.auth.signOut();
+      throw new Error('Email not confirmed');
+    }
   }
 
   async function signOut() {
