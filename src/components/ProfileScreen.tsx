@@ -27,7 +27,28 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
     return localStorage.getItem('fitlab_dark') === '1';
   });
   const [suggestions, setSuggestions] = useState(true);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [photoConsentGiven, setPhotoConsentGiven] = useState(() =>
+    typeof window !== 'undefined' && localStorage.getItem('fitlab_photo_consent') === '1'
+  );
   const fileRef = useRef<HTMLInputElement>(null);
+
+  function requestUpload() {
+    if (photoConsentGiven) {
+      fileRef.current?.click();
+    } else {
+      setConsentChecked(false);
+      setShowConsentModal(true);
+    }
+  }
+
+  function confirmConsent() {
+    localStorage.setItem('fitlab_photo_consent', '1');
+    setPhotoConsentGiven(true);
+    setShowConsentModal(false);
+    fileRef.current?.click();
+  }
 
   function setGender(g: string) {
     setGenderLocal(g);
@@ -97,6 +118,42 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
 
   return (
     <div className="h-full overflow-y-auto pb-4">
+      {showConsentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-6">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col gap-4">
+            <h2 className="text-base font-extrabold text-dark">Utilisation de ta photo</h2>
+            <p className="text-sm text-dim leading-relaxed">
+              Ta photo sera traitée pour générer un essayage virtuel. Elle ne sera utilisée que pour cet usage et tu pourras la supprimer à tout moment.
+            </p>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={e => setConsentChecked(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0"
+              />
+              <span className="text-xs text-dark leading-relaxed">
+                J'accepte que ma photo soit utilisée pour générer un essayage virtuel, conformément à la politique de confidentialité.
+              </span>
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowConsentModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-dim"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmConsent}
+                disabled={!consentChecked}
+                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-40"
+              >
+                Continuer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="pt-14 pb-4 text-center">
         <div className="w-[72px] h-[72px] rounded-full mx-auto mb-2.5 flex items-center justify-center text-3xl text-white shadow-lg"
              style={{ background: 'linear-gradient(135deg, #FF6B8A, #7C5CFC)' }}>
@@ -147,14 +204,14 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
               <img src={basePhoto} alt="" className="w-full aspect-[2/3] object-cover object-top" />
               <div className="absolute bottom-0 inset-x-0 p-3 flex"
                    style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.6))' }}>
-                <button onClick={() => fileRef.current?.click()}
+                <button onClick={requestUpload}
                   className="flex-1 py-2 bg-white/90 backdrop-blur rounded-lg text-xs font-semibold text-dark active:scale-95 transition-all">
                   📸 Changer
                 </button>
               </div>
             </div>
           ) : (
-            <button onClick={() => fileRef.current?.click()}
+            <button onClick={requestUpload}
               className="w-full aspect-[2/3] flex flex-col items-center justify-center gap-3 bg-border/30 active:bg-border/50 transition-all">
               {uploading ? (
                 <><div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" /><p className="text-xs text-dim">Upload…</p></>
