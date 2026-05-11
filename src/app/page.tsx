@@ -58,11 +58,14 @@ export default function Home() {
     if (user && !localStorage.getItem('fitlab_photo_hint')) {
       setShowPhotoBubble(true);
     }
-    if (user && localStorage.getItem('fitlab_signup_confirm_pending') === '1') {
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && user && localStorage.getItem('fitlab_signup_confirm_pending') === '1') {
       setShowSignupConfirmPopup(true);
       localStorage.removeItem('fitlab_signup_confirm_pending');
     }
-  }, [user]);
+  }, [authLoading, user]);
 
   const [currentWeather, setCurrentWeather] = useState<WeatherInfo | null>(null);
 
