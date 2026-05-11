@@ -12,6 +12,7 @@ export default function OnboardingScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showEmailConfirmPopup, setShowEmailConfirmPopup] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: boolean; password?: boolean }>({});
 
   return (
     <div
@@ -127,17 +128,19 @@ export default function OnboardingScreen() {
             type="email"
             placeholder="Adresse email"
             value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-border text-sm"
+            onChange={e => { setEmail(e.target.value); setFieldErrors(f => ({ ...f, email: false })); }}
+            className={`w-full px-4 py-3 rounded-xl border text-sm ${fieldErrors.email ? 'border-red-500 bg-red-50' : 'border-border'}`}
           />
+          {fieldErrors.email && <p className="text-xs text-red-500 -mt-2">L'adresse email est requise</p>}
 
           <input
             type="password"
             placeholder="Mot de passe (min. 6 caractères)"
             value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-border text-sm"
+            onChange={e => { setPassword(e.target.value); setFieldErrors(f => ({ ...f, password: false })); }}
+            className={`w-full px-4 py-3 rounded-xl border text-sm ${fieldErrors.password ? 'border-red-500 bg-red-50' : 'border-border'}`}
           />
+          {fieldErrors.password && <p className="text-xs text-red-500 -mt-2">Le mot de passe est requis (min. 6 caractères)</p>}
 
           {error && (
             <p className="text-xs text-red-500">{error}</p>
@@ -146,6 +149,9 @@ export default function OnboardingScreen() {
           <button
             disabled={!cguAccepted || loading}
             onClick={async () => {
+              const errors = { email: !email.trim(), password: password.length < 6 };
+              setFieldErrors(errors);
+              if (errors.email || errors.password) return;
               setError(null);
               try {
                 if (mode === 'signup') {
@@ -155,7 +161,16 @@ export default function OnboardingScreen() {
                   await signInWithEmail(email, password);
                 }
               } catch (e: any) {
-                setError(e.message);
+                const msg: string = e.message ?? '';
+                if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
+                  setError('Email ou mot de passe incorrect.');
+                } else if (msg.includes('Email not confirmed')) {
+                  setError('Vérifie ta boîte mail et clique sur le lien de confirmation avant de te connecter.');
+                } else if (msg.includes('User already registered')) {
+                  setError('Un compte existe déjà avec cet email. Utilise "Se connecter".');
+                } else {
+                  setError('Une erreur est survenue. Réessaie.');
+                }
               }
             }}
             className="w-full py-3 rounded-xl font-semibold bg-primary text-white"
