@@ -1,6 +1,13 @@
 import { supabase } from './supabase';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE = API.replace(/\/+$/, '');
+
+function resolveApiUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  if (!API_BASE) return url;
+  return url.startsWith('/') ? `${API_BASE}${url}` : `${API_BASE}/${url}`;
+}
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
@@ -28,7 +35,7 @@ export async function apiFetch<T>(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const res = await fetch(url, {
+  const res = await fetch(resolveApiUrl(url), {
     ...options,
     headers,
     credentials: 'include', // ✅ utile si cookies / auth serveur
@@ -71,7 +78,7 @@ export async function apiGet<T>(url: string): Promise<T> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
 
-  const res = await fetch(url, {
+  const res = await fetch(resolveApiUrl(url), {
     method: 'GET',
     credentials: 'include',
     headers: token
@@ -91,7 +98,7 @@ export async function apiDelete<T = any>(url: string): Promise<T> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
 
-  const res = await fetch(url, {
+  const res = await fetch(resolveApiUrl(url), {
     method: 'DELETE',
     credentials: 'include',
     headers: token

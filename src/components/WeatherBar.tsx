@@ -2,6 +2,7 @@
 
 import { WeatherInfo } from '@/lib/types';
 import { useEffect, useState } from 'react';
+import { apiGet } from '@/lib/api';
 
 interface WeatherData {
   temp: number;
@@ -36,9 +37,7 @@ export default function WeatherBar({
 
     async function fetchAndApplyWeather(url: string): Promise<boolean> {
       try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Weather API error ${res.status}`);
-        const data: WeatherData = await res.json();
+        const data = await apiGet<WeatherData>(url);
         if (cancelled) return true;
 
         setWeather(data);
