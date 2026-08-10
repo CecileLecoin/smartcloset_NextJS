@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
+const API = process.env.NEXT_PUBLIC_API_URL;
 const API_BASE = API.replace(/\/+$/, '');
 
 function resolveApiUrl(url: string): string {
