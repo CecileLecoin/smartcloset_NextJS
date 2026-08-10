@@ -1,0 +1,57 @@
+# =========================
+# Datasets & training data
+# =========================
+datasets/
+train2020/
+val_test2020/
+training/
+training1/
+fashionpedia-api/
+processors/
+
+# =========================
+# Test / dev
+# =========================
+tests/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =========================
+# Archives & heavy files
+# =========================
+*.zip
+*.tar
+*.tar.gz
+archive.zip
+ClothingAttributeDataset.zip
+
+# =========================
+# Environment / secrets
+# =========================
+.env
+.env.*
+*.pem
+*.key
+
+# =========================
+# OS / editor junk
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =========================
+# Node / frontend (si existant)
+# =========================
+node_modules/
+.next/
+dist/
+
+# =========================
+# Git
+# =========================
+.git
+.gitignore

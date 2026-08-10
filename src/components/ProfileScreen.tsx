@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Camera, ChevronRight, Palette, Upload, LogOut, AlertCircle, Moon, Sun } from 'lucide-react';
-import { apiFetch, apiGet, apiPost } from '@/lib/api';
+import { Camera, ChevronRight, Palette, Upload, LogOut, AlertCircle, Moon, Sun, Trash2 } from 'lucide-react';
+import { apiDelete, apiFetch, apiGet, apiPost } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
 interface Props {
@@ -32,6 +32,10 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
   const [photoConsentGiven, setPhotoConsentGiven] = useState(() =>
     typeof window !== 'undefined' && localStorage.getItem('fitlab_photo_consent') === '1'
   );
+  const [showDeletePicturesModal, setShowDeletePicturesModal] = useState(false);
+  const [deletingPictures, setDeletingPictures] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function requestUpload() {
@@ -91,8 +95,35 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
       fd.append('file', files[0]);
       fd.append('morphology', 'X');
       fd.append('gender', gender);
-      await apiPost('/api/upload-base-model', fd);
-      await loadBasePhoto();
+      try {
+        await apiPost('/api/upload-base-model', fd);
+      } catch (err: any) {
+        const msg = String(err?.message || '');
+        // Some backends return 200 with an empty body, which can trigger a JSON parse error client-side.
+        const looksLikeEmptyJsonResponse =
+          msg.includes('Unexpected end of JSON input') ||
+          msg.toLowerCase().includes('json');
+        if (!looksLikeEmptyJsonResponse) throw err;
+      }
+
+      // The backend may finalize processing a few seconds after the request returns.
+      let synced = false;
+      for (let i = 0; i < 8; i++) {
+        const data = await apiGet<{ url: string | null }>(
+          `/api/base-model?morphology=X&gender=${gender}`
+        );
+        if (data?.url) {
+          setBasePhoto(`${data.url}?t=${Date.now()}`);
+          synced = true;
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+
+      if (!synced) {
+        // Fallback to the regular loader; no hard error because processing can still complete shortly after.
+        await loadBasePhoto();
+      }
     } catch (e: any) { alert('Erreur: ' + e.message); }
     finally { setUploading(false); }
   }
@@ -114,6 +145,35 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
   async function handleLogout() {
     if (!confirm('Se déconnecter ?')) return;
     try { await signOut(); } catch {}
+  }
+
+  async function handleDeleteAllPictures() {
+    setDeletingPictures(true);
+    try {
+      await apiDelete('/api/wardrobe/pictures');
+      alert('Toutes les photos de votre garde-robe ont été supprimées.');
+      setShowDeletePicturesModal(false);
+      window.location.reload();
+    } catch (e: any) {
+      alert('Erreur suppression: ' + e.message);
+    } finally {
+      setDeletingPictures(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeletingAccount(true);
+    try {
+      await apiDelete('/api/account');
+      setShowDeleteAccountModal(false);
+      alert('Votre compte a été supprimé.');
+      await signOut();
+      window.location.reload();
+    } catch (e: any) {
+      alert('Erreur suppression du compte: ' + e.message);
+    } finally {
+      setDeletingAccount(false);
+    }
   }
 
   return (
@@ -149,6 +209,72 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-40"
               >
                 Continuer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeletePicturesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-6">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                <AlertCircle size={18} />
+              </div>
+              <div>
+                <h2 className="text-base font-extrabold text-dark">Supprimer toutes les photos ?</h2>
+                <p className="text-sm text-dim leading-relaxed mt-1">
+                  Cette action est irréversible. Toutes les photos de votre garde-robe seront définitivement supprimées.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeletePicturesModal(false)}
+                disabled={deletingPictures}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-dim disabled:opacity-40"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteAllPictures}
+                disabled={deletingPictures}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold disabled:opacity-40"
+              >
+                {deletingPictures ? 'Suppression…' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteAccountModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                <AlertCircle size={18} />
+              </div>
+              <div>
+                <h2 className="text-base font-extrabold text-dark">Supprimer le compte ?</h2>
+                <p className="text-sm text-dim leading-relaxed mt-1">
+                  Cette action est irréversible. Votre compte, vos photos et vos données liées seront définitivement supprimés.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteAccountModal(false)}
+                disabled={deletingAccount}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-dim disabled:opacity-40"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount}
+                className="flex-1 py-2.5 rounded-xl bg-red-700 text-white text-sm font-semibold disabled:opacity-40"
+              >
+                {deletingAccount ? 'Suppression…' : 'Supprimer le compte'}
               </button>
             </div>
           </div>
@@ -259,10 +385,24 @@ export default function ProfileScreen({ gender: genderProp, onGenderChange }: Pr
           <ChevronRight size={16} className="text-dim" />
         </button>
 
+        <button onClick={() => setShowDeletePicturesModal(true)}
+          className="w-full card flex items-center gap-3 p-3.5 mb-1.5 active:bg-red-50 transition-colors">
+          <Trash2 size={18} className="text-red-600" />
+          <span className="flex-1 text-[13px] font-medium text-left text-red-600">Supprimer toutes mes photos</span>
+          <ChevronRight size={16} className="text-red-400" />
+        </button>
+
         <button onClick={handleLogout}
-          className="w-full card flex items-center gap-3 p-3.5 active:bg-border/30 transition-colors">
+          className="w-full card flex items-center gap-3 p-3.5 mb-1.5 active:bg-border/30 transition-colors">
           <LogOut size={18} className="text-primary" />
           <span className="flex-1 text-[13px] font-medium text-left text-primary">Se déconnecter</span>
+        </button>
+
+        <button onClick={() => setShowDeleteAccountModal(true)}
+          className="w-full card flex items-center gap-3 p-3.5 active:bg-red-50 transition-colors">
+          <Trash2 size={18} className="text-red-700" />
+          <span className="flex-1 text-[13px] font-medium text-left text-red-700">Supprimer mon compte</span>
+          <ChevronRight size={16} className="text-red-400" />
         </button>
       </div>
     </div>

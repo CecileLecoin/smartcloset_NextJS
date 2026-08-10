@@ -720,7 +720,7 @@ async function compressImage(
               <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
             </div>
             <p className="text-sm font-semibold">Analyse en cours…</p>
-            <p className="text-xs text-dim mt-1">Claude Vision analyse vos vêtements</p>
+            <p className="text-xs text-dim mt-1">Notre styliste virtuelle analyse vos vêtements</p>
           </div>
         </div>
       )}

@@ -19,8 +19,7 @@ export default function WeatherBar({
   onWeatherChange?: (weather: WeatherInfo) => void;
 }) {
     const [weather, setWeather] = useState<WeatherData | null>(null);
-    const [season, setSeason] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true); // Placeholder for loading state if needed
+    const [loading, setLoading] = useState(true);
 
     ///////Fallback saisons
     function inferSeasonFromDate(): "spring" | "summer" | "autumn" | "winter" {
@@ -32,27 +31,73 @@ export default function WeatherBar({
     }
 
 
-  useEffect(() => {    
-    fetch('/api/weather')
-        .then(res => {
-          if (!res.ok) throw new Error(`Weather API error ${res.status}`);
-          return res.json();
-        })
-        .then(data => {
-          setWeather(data);
-          setLoading(false);
+  useEffect(() => {
+    let cancelled = false;
 
+    async function fetchAndApplyWeather(url: string): Promise<boolean> {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Weather API error ${res.status}`);
+        const data: WeatherData = await res.json();
+        if (cancelled) return true;
 
+        setWeather(data);
         onWeatherChange?.({
           tag: data.tag,
           season: data.season ?? inferSeasonFromDate(),
           temperature: data.temp,
         });
+        return true;
+      } catch {
+        return false;
+      }
+    }
 
-        //onFilterByWeather?.(data.tag);
-      })
-      .catch(console.error);
-  }, []);
+    async function loadWeather() {
+      setLoading(true);
+
+      const fetchParisWeather = async () => {
+        const ok = await fetchAndApplyWeather('/api/weather');
+        if (!ok && !cancelled) setWeather(null);
+      };
+
+      if (!navigator.geolocation) {
+        await fetchParisWeather();
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async position => {
+          const { latitude, longitude } = position.coords;
+          const ok = await fetchAndApplyWeather(
+            `/api/weather?lat=${latitude}&lon=${longitude}`
+          );
+
+          if (!ok) {
+            await fetchParisWeather();
+          }
+
+          if (!cancelled) setLoading(false);
+        },
+        async () => {
+          await fetchParisWeather();
+          if (!cancelled) setLoading(false);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 8000,
+          maximumAge: 300000,
+        }
+      );
+    }
+
+    loadWeather();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [onWeatherChange]);
 
     if (loading) {
     return (
